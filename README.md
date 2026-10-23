@@ -114,6 +114,8 @@
 | ![跑动](docs/gifs/pet-run.gif) |
 
 > 动作池共 19 个 SWF：待机 3、玩耍 7、点击互动 7、说话 2；跑动使用 CSS 位移（`Enter1.swf` 是带草地背景的入场动画，不适合叠加在输入框上，因此未使用）。
+>
+> **全部 19 个动作的 GIF 动图见 [docs/PET_ACTIONS.md](docs/PET_ACTIONS.md)。**
 
 ### 性能与加载
 
