@@ -610,6 +610,22 @@ body.qq7-shell .wb-home-route__input [contenteditable="true"] {
   line-height: 1.6 !important;
 }
 
+/* App 原生 tooltip：主题原先让背景透明、文字近白，压在浅色输入区上几乎看不清 */
+body.qq7-shell .cr-tooltip {
+  background: #ffffe1 !important;
+  color: #173352 !important;
+  border: 1px solid #7f9db9 !important;
+  box-shadow: 2px 2px 4px rgba(40, 70, 100, .25) !important;
+}
+
+body.qq7-shell .cr-tooltip__content {
+  color: #173352 !important;
+}
+
+body.qq7-shell .cr-tooltip__arrow {
+  border-top-color: #ffffe1 !important;
+}
+
 /* 发送键保持原生圆形，不再叠加方形边框 */
 /* 底部队列说明交给外壳状态栏 */
 body.qq7-shell .conversation-input-area__disclaimer,

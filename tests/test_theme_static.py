@@ -43,6 +43,11 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("readServiceAccount", self.js)
         self.assertIn("isLoggedIn", self.js)
 
+    def test_native_tooltip_contrast(self) -> None:
+        self.assertIn("body.qq7-shell .cr-tooltip", self.css)
+        self.assertIn("background: #ffffe1", self.css)
+        self.assertIn("color: #173352", self.css)
+
     def test_friend_panel_categories_and_summon(self) -> None:
         self.assertIn('data-list="expert"', self.js)
         self.assertIn('data-list="skill"', self.js)
