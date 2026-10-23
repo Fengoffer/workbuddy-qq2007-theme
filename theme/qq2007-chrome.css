@@ -131,6 +131,19 @@ body.qq7-shell [data-view-id="sources-panel"] { width: 0 !important; }
 }
 
 #qq7-root .qq7-title-btns { display: flex; gap: 3px; pointer-events: auto; -webkit-app-region: no-drag; }
+
+/* macOS hiddenInset 的系统标题栏只有顶部约 38px；标题栏下沿这一条收不到系统双击，
+   用透明热区交给 qq2007-chrome.js 处理拖动与双击缩放（顶部 38px 仍是原生，最顺滑） */
+#qq7-root .qq7-titlebar-jszone {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 26px;
+  pointer-events: none;
+}
+body.qq7-js-window-chrome #qq7-root .qq7-titlebar-jszone {
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
 #qq7-root .qq7-title-btns span {
   width: 19px; height: 17px;
   display: grid; place-items: center;
@@ -186,10 +199,9 @@ body.qq7-shell [data-view-id="sources-panel"] { width: 0 !important; }
   background: #b9cfe2; box-shadow: 1px 0 #fff;
 }
 
-/* macOS：原生 -webkit-app-region: drag 区域不会把鼠标事件派发给渲染进程，
-   双击缩放只在系统标题栏范围生效。开启 qq7-js-window-chrome 后改由
-   qq2007-chrome.js 接管拖动与双击缩放，覆盖整个标题栏 + 菜单栏。 */
-body.qq7-js-window-chrome #qq7-root .qq7-titlebar,
+/* macOS：标题栏保留原生 -webkit-app-region: drag —— 拖动和系统双击缩放都由
+   macOS 自己处理，最跟手。菜单栏在原生 drag 区里收不到鼠标事件、系统双击也
+   不覆盖它，所以单独改成普通区域，由 qq2007-chrome.js 接管拖动与双击缩放。 */
 body.qq7-js-window-chrome #qq7-root .qq7-menubar {
   -webkit-app-region: no-drag;
 }

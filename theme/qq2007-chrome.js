@@ -241,11 +241,11 @@
     `;
   }
 
-  /* macOS：原生 -webkit-app-region: drag 区域不会把鼠标事件派发给渲染进程，
-     双击缩放只在系统标题栏范围生效。这里改用 WorkBuddy 暴露的窗口 API 接管
-     标题栏 / 菜单栏：空白处拖动走 startDrag / stopDrag，双击调 maximize
-     （WorkBuddy 内部即 zoom / unzoom 切换），菜单项保持点击。
-     拖动超过 4px 才真正开始，避免单击 / 双击误触发；窗口已最大化时先还原再拖
+  /* macOS：标题栏保持原生 -webkit-app-region: drag，拖动与系统双击缩放都由
+     macOS 处理，最跟手。菜单栏在原生 drag 区里收不到鼠标事件、系统双击也不覆盖
+     它，所以改成普通区域后由这里接管：空白处拖动走 startDrag / stopDrag，双击
+     调 maximize（WorkBuddy 内部即 zoom / unzoom 切换），菜单项保持点击。
+     拖动超过 4px 才真正开始，窗口已最大化时先还原再拖
      （WorkBuddy 的拖拽控制器在最大化状态下会直接 no-op）。 */
   function setupWindowChrome() {
     if (!/^Mac/.test(navigator.platform || "")) return;
@@ -262,14 +262,34 @@
     let pending = null;
     let dragging = false;
     let restoreTimer = 0;
+    let zoomLock = 0;
 
     const beginDrag = () => {
       if (!pointerDown || dragging) return;
       dragging = true;
       swallow(desktopWindow.startDrag());
     };
-    const onPointerDown = (event) => {
-      if (event.button !== 0 || event.detail > 1 || isInteractive(event.target)) return;
+    const endDrag = () => {
+      pointerDown = false;
+      pending = null;
+      if (restoreTimer) { window.clearTimeout(restoreTimer); restoreTimer = 0; }
+      if (!dragging) return;
+      dragging = false;
+      if (typeof desktopWindow.stopDrag === "function") swallow(desktopWindow.stopDrag());
+    };
+    // 双击缩放在第二次按下时立即触发（系统标题栏也是这样），比等 dblclick 更跟手
+    const triggerZoom = () => {
+      zoomLock = performance.now();
+      endDrag();
+      swallow(desktopWindow.maximize());
+    };
+    const onMouseDown = (event) => {
+      if (event.button !== 0 || isInteractive(event.target)) return;
+      if (event.detail >= 2) {
+        event.preventDefault();
+        triggerZoom();
+        return;
+      }
       pointerDown = true;
       pending = { x: event.clientX, y: event.clientY };
     };
@@ -288,27 +308,19 @@
         }, 160);
       }).catch(() => beginDrag());
     };
-    const endDrag = () => {
-      pointerDown = false;
-      pending = null;
-      if (restoreTimer) { window.clearTimeout(restoreTimer); restoreTimer = 0; }
-      if (!dragging) return;
-      dragging = false;
-      if (typeof desktopWindow.stopDrag === "function") swallow(desktopWindow.stopDrag());
-    };
-    const toggleZoom = (event) => {
+    const onDoubleClick = (event) => {
       if (isInteractive(event.target)) return;
+      if (performance.now() - zoomLock < 600) return;
       event.preventDefault();
-      endDrag();
-      swallow(desktopWindow.maximize());
+      triggerZoom();
     };
 
-    for (const selector of [".qq7-titlebar", ".qq7-menubar"]) {
+    for (const selector of [".qq7-titlebar-jszone", ".qq7-menubar"]) {
       const el = root.querySelector(selector);
       if (!el) continue;
-      el.addEventListener("pointerdown", onPointerDown);
+      el.addEventListener("mousedown", onMouseDown);
       el.addEventListener("pointermove", onPointerMove);
-      el.addEventListener("dblclick", toggleZoom);
+      el.addEventListener("dblclick", onDoubleClick);
     }
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", endDrag);
@@ -323,6 +335,7 @@
       <div class="qq7-titlebar">
         <span class="qq7-title-ico"></span>
         <span class="qq7-title-text">WorkBuddy 2007</span>
+        <div class="qq7-titlebar-jszone" aria-hidden="true"></div>
       </div>
       <div class="qq7-menubar">
         ${MENU.map((m) => `<span class="qq7-menu-item" data-action="${m.action}">${icon(m.icon)}<span>${m.label}</span></span>`).join("")}
