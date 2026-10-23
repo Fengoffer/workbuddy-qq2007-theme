@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安装与排错文档
+    url: https://github.com/Fengoffer/workbuddy-qq2007-theme/blob/main/docs/TROUBLESHOOTING.md
+    about: 安装失败、白屏、宠物不显示、通知音异常等问题，请先看这里
+  - name: 兼容性说明
+    url: https://github.com/Fengoffer/workbuddy-qq2007-theme/blob/main/docs/COMPATIBILITY.md
+    about: 查看已验证的 WorkBuddy 版本、验收清单与升级适配流程
+  - name: 安全与回滚
+    url: https://github.com/Fengoffer/workbuddy-qq2007-theme/blob/main/docs/SAFETY.md
+    about: 备份位置、字节对齐原理与恢复原版的方法

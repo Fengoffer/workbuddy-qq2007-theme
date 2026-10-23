@@ -1,0 +1,30 @@
+# https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.sh]
+indent_size = 2
+
+# PowerShell 在 Windows 上更习惯 CRLF；仓库内统一按 .gitattributes 处理
+[*.ps1]
+end_of_line = crlf
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab

@@ -1,0 +1,94 @@
+name: 🐞 问题反馈
+description: 安装或使用主题时遇到问题（白屏、崩溃、样式错位、宠物不动、通知音异常等）
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！提交前请先看 [排错文档](https://github.com/Fengoffer/workbuddy-qq2007-theme/blob/main/docs/TROUBLESHOOTING.md) 与 [兼容性说明](https://github.com/Fengoffer/workbuddy-qq2007-theme/blob/main/docs/COMPATIBILITY.md)。
+
+        **请勿粘贴真实会话内容、账号、文件名等隐私信息；截图请先脱敏。**
+
+  - type: input
+    id: workbuddy-version
+    attributes:
+      label: WorkBuddy 版本
+      description: "macOS 获取方式：defaults read /Applications/WorkBuddy.app/Contents/Info.plist CFBundleShortVersionString"
+      placeholder: "5.8.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      options:
+        - macOS 26
+        - macOS 15
+        - macOS 14 或更早
+        - Windows 11
+        - Windows 10
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: 安装方式
+      options:
+        - macOS install.sh
+        - Windows install.ps1
+        - AI 一键安装
+        - 手动复制
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: symptom
+    attributes:
+      label: 现象
+      description: 具体表现，例如白屏、标题栏错位、宠物不出现、双通知音、次级窗口被遮挡
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 完全退出 WorkBuddy
+        2. 运行 bash scripts/macos/install.sh
+        3. 打开 WorkBuddy 后……
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 安装输出 / 控制台报错
+      description: 可直接粘贴安装器输出；控制台报错用 Cmd+Option+I / Ctrl+Shift+I 获取。截图请脱敏。
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 其他环境信息
+      description: 备份目录 metadata.json（脱敏后）、是否手动改过 app.asar、是否开启过「原版」开关等
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 已阅读排错文档，且安装时 WorkBuddy 已完全退出
+          required: true
+        - label: 已确认安装前有备份（~/WorkBuddy/QQ2007ThemeBackups）
+          required: true
+        - label: 截图 / 日志中的会话、账号、文件名已脱敏
+          required: true

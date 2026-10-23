@@ -1,0 +1,28 @@
+# GitHub Release 自动分类规则（PR 打上对应 label 后生效）
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: 主题外壳
+      labels:
+        - area/shell
+    - title: 聊天界面
+      labels:
+        - area/chat
+    - title: QQ 宠物
+      labels:
+        - area/pet
+    - title: 通知音与经典签名
+      labels:
+        - area/classic
+    - title: 安装、安全与回滚
+      labels:
+        - area/install
+    - title: 文档与 CI
+      labels:
+        - docs
+        - ci
+    - title: 其他变更
+      labels:
+        - "*"

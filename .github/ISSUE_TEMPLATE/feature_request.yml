@@ -1,0 +1,58 @@
+name: ✨ 功能建议
+description: 希望主题支持的新功能或改进
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎提功能建议。涉及新素材（宠物动作、音效、图片）时，请说明来源与许可，避免引入不可商用素材。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 想解决的问题
+      description: 当前哪里不顺手 / 哪里不够像 2007 年的 QQ
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的效果
+      description: 可以描述交互、视觉、文案；有参考截图更好
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 涉及模块
+      options:
+        - 主题外壳（标题栏 / 菜单栏 / 好友面板 / 状态栏）
+        - 聊天界面
+        - QQ 宠物
+        - 通知音
+        - 经典签名
+        - 安装 / 卸载脚本
+        - 文档
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 参考资料 / 素材来源
+      description: 链接、截图、素材许可说明
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 补充确认
+      options:
+        - label: 愿意提交 PR 或协助测试
+          required: false
+        - label: 涉及的素材允许在本项目（非商用）使用
+          required: false

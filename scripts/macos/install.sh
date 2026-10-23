@@ -43,7 +43,7 @@ INDEX="$UP/index.html"
 
 [ -f "$ASAR" ] || { echo "找不到 $ASAR"; exit 1; }
 [ -f "$INDEX" ] || {
-  echo "当前 WorkBuddy 版本不是“unpacked renderer”结构，无法安全注入主题。"
+  echo "当前 WorkBuddy 版本不是「unpacked renderer」结构，无法安全注入主题。"
   echo "本安装器不会修改 app.asar，因此已停止，未做任何更改。"
   exit 1
 }

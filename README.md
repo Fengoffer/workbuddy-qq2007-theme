@@ -7,8 +7,9 @@
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)]()
 [![WorkBuddy](https://img.shields.io/badge/WorkBuddy-5.8.3-0a5fce)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
+[![CI](https://github.com/Fengoffer/workbuddy-qq2007-theme/actions/workflows/ci.yml/badge.svg)](https://github.com/Fengoffer/workbuddy-qq2007-theme/actions/workflows/ci.yml)
 
-[效果预览](#效果预览) · [功能](#功能) · [QQ-宠物](#qq-宠物) · [安装](#安装) · [AI-一键安装](#ai-一键安装) · [安全与回滚](#安全与回滚) · [常见问题](docs/TROUBLESHOOTING.md)
+[效果预览](#效果预览) · [功能](#功能) · [QQ-宠物](#qq-宠物) · [安装](#安装) · [AI-一键安装](#ai-一键安装) · [安全与回滚](#安全与回滚) · [常见问题](docs/TROUBLESHOOTING.md) · [兼容性](docs/COMPATIBILITY.md) · [维护文档](docs/MAINTAINING.md)
 
 </div>
 
@@ -308,8 +309,12 @@ workbuddy-qq2007-theme/
 ├── scripts/
 │   ├── common/                # 跨平台 index 字节对齐工具
 │   ├── macos/                 # install.sh / uninstall.sh
-│   └── windows/               # install.ps1 / uninstall.ps1
-├── docs/                      # 安装、安全、排错、截图、GIF
+│   ├── windows/               # install.ps1 / uninstall.ps1
+│   ├── maintenance/           # 只读安装校验 / 双远端同步
+│   └── ci/                    # CI 仓库卫生检查
+├── tests/                     # Python 单元测试（注入 / 对齐 / 幂等性）
+├── docs/                      # 安装、安全、排错、兼容性、维护、截图、GIF
+├── .github/                   # CI、Issue / PR 模板
 ├── AI_INSTALL.md
 ├── THIRD_PARTY_NOTICES.md
 └── README.md
@@ -322,6 +327,12 @@ workbuddy-qq2007-theme/
 
 两个仓库内容同步更新；国内访问 Gitee 更快，AI 一键安装也可以把 clone 地址换成 Gitee。
 
+## 维护与发布
+
+- **兼容性矩阵**：[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) —— 已验证的 WorkBuddy 版本、安装后验收清单、WorkBuddy 升级后的适配流程；
+- **维护手册**：[docs/MAINTAINING.md](docs/MAINTAINING.md) —— 分支与版本策略、发布检查清单、双仓库同步、常见维护任务、紧急回滚；
+- **质量保障**：GitHub Actions 会运行 Python 单元测试、ShellCheck、PowerShell 语法、JavaScript 语法、仓库卫生与版本一致性检查；本机可用 `bash scripts/maintenance/verify-install.sh` 只读检查注入状态。
+
 ## 贡献
 
 欢迎 Issue / PR，尤其是：
@@ -331,7 +342,7 @@ workbuddy-qq2007-theme/
 - 更多 QQ 宠物动作（需确认素材来源与许可证）；
 - 文案、截图、GIF 优化。
 
-提交前请确保不包含任何真实会话、账号、文件名或隐私数据。
+提交前请确保不包含任何真实会话、账号、文件名或隐私数据；提交 PR 前请先跑一遍仓库自带的检查（见 [PR 模板](.github/PULL_REQUEST_TEMPLATE.md) 与 [维护手册](docs/MAINTAINING.md)）。
 
 ## 许可证
 

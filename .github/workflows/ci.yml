@@ -1,0 +1,69 @@
+name: CI
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Python 语法 + 单元测试
+        run: |
+          python3 -m py_compile scripts/common/*.py scripts/ci/*.py
+          python3 -m unittest discover -s tests -v
+
+      - name: 仓库卫生（体积 / 垃圾文件 / 凭据 / 版本一致性）
+        run: python3 scripts/ci/check_repo_hygiene.py
+
+      - name: JavaScript 语法
+        run: |
+          node --check theme/qq2007-chrome.js
+          node --check theme/qq2008-notify.js
+
+      - name: ShellCheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends shellcheck
+          shellcheck -S warning scripts/macos/*.sh scripts/maintenance/*.sh
+
+      - name: PowerShell 语法
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem scripts -Recurse -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object {
+                Write-Host "::error file=$($_.Extent.File):$($_.Extent.StartLineNumber)::$($_.Message)"
+              }
+              $failed = $true
+            }
+          }
+          if ($failed) { exit 1 }
+          Write-Host "PowerShell scripts parsed OK"
