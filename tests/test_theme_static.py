@@ -43,6 +43,9 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("readServiceAccount", self.js)
         self.assertIn("isLoggedIn", self.js)
 
+    def test_friend_panel_collapse_selector_scoped(self) -> None:
+        self.assertIn("body.qq7-friend-collapsed #qq7-root .qq7-friend-head .qq7-friend-tab", self.css)
+
     def test_macos_titlebar_zone_exists(self) -> None:
         self.assertIn("qq7-titlebar-jszone", self.js)
         self.assertIn("qq7-titlebar-jszone", self.css)

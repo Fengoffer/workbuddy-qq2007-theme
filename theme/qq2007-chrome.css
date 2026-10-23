@@ -662,12 +662,14 @@ body.qq7-shell ::-webkit-scrollbar-thumb {
 /* ---------- 7. 好友面板折叠 / 环境信息 ---------- */
 body.qq7-friend-collapsed { --qq7-right: 26px; }
 
-body.qq7-friend-collapsed .qq7-friend { width: 25px; }
-body.qq7-friend-collapsed .qq7-friend-head { justify-content: center; padding: 0; }
-body.qq7-friend-collapsed .qq7-friend-head .qq7-friend-tab { display: none; }
-body.qq7-friend-collapsed .qq7-friend-collapse { margin-left: 0; }
-body.qq7-friend-collapsed .qq7-friend-body,
-body.qq7-friend-collapsed .qq7-friend-search { display: none !important; }
+/* 折叠规则必须带上 #qq7-root：基础样式是 #qq7-root .qq7-friend-tab 等 id 选择器，
+   不带 id 时会被基础样式覆盖，tab 仍占位并把折叠箭头挤出窗口，导致收起后无法展开。 */
+body.qq7-friend-collapsed #qq7-root .qq7-friend { width: 25px; }
+body.qq7-friend-collapsed #qq7-root .qq7-friend-head { justify-content: center; padding: 0; }
+body.qq7-friend-collapsed #qq7-root .qq7-friend-head .qq7-friend-tab { display: none; }
+body.qq7-friend-collapsed #qq7-root .qq7-friend-collapse { margin-left: 0; }
+body.qq7-friend-collapsed #qq7-root .qq7-friend-body,
+body.qq7-friend-collapsed #qq7-root .qq7-friend-search { display: none !important; }
 
 #qq7-root .qq7-friend-body {
   display: flex;
