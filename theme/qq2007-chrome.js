@@ -59,8 +59,35 @@
   ];
   const INVALID_ACCOUNT_NAMES = /^(登录|重新登录|立即登录|请登录|未登录|退出登录|登录\s*\/\s*注册|log ?in|sign ?in|relogin)$/i;
 
+  function getAccountService() {
+    const service = window.__genieAccountService;
+    return service && typeof service.getAccount === "function" ? service : null;
+  }
+
+  /* 返回 {name} / {loggedOut:true}；undefined=账号服务不可用或尚未初始化 */
+  function readServiceAccount() {
+    const service = getAccountService();
+    if (!service) return undefined;
+    try {
+      const initialized = typeof service.isInitialized === "function" ? service.isInitialized() : true;
+      if (!initialized) return undefined;
+      const loggedIn = typeof service.isLoggedIn === "function" ? service.isLoggedIn() : true;
+      if (!loggedIn) return { loggedOut: true };
+      const account = service.getAccount();
+      const name = account && (account.nickname || account.displayName || account.enterpriseUserName || account.name);
+      return typeof name === "string" && name.trim() ? { name: name.trim() } : undefined;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
   /* 返回账号名：字符串=可用；null=明确的未登录 / 登录过期状态；""=暂时没读到 */
   function readAccountName() {
+    const serviceAccount = readServiceAccount();
+    if (serviceAccount) {
+      if (serviceAccount.loggedOut) return null;
+      if (serviceAccount.name) return serviceAccount.name;
+    }
     let loginPlaceholder = false;
     for (const selector of ACCOUNT_NAME_SELECTORS) {
       const candidates = [...document.querySelectorAll(selector)];
@@ -79,6 +106,8 @@
   /* WorkBuddy 未登录时用户菜单只渲染头像按钮，class 里没有 --workbuddy；
      菜单还没渲染时无法判断，返回 false 保留缓存 / 占位，等下一轮轮询。 */
   function accountMenuShowsLoggedOut() {
+    const serviceAccount = readServiceAccount();
+    if (serviceAccount) return Boolean(serviceAccount.loggedOut);
     const triggers = [...document.querySelectorAll(".user-menu-trigger")];
     if (!triggers.length) return false;
     // 优先看可见 trigger：可见节点里有登录态才算登录，避免隐藏的旧登录态掩盖真实登出
@@ -116,6 +145,12 @@
 
   function watchAccountName() {
     updateAccountName();
+    const service = getAccountService();
+    if (service && typeof service.subscribe === "function") {
+      try {
+        service.subscribe(() => updateAccountName());
+      } catch (error) {}
+    }
     window.setInterval(updateAccountName, 1500);
   }
 

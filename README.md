@@ -292,7 +292,7 @@ env -u ELECTRON_RUN_AS_NODE open -a /Applications/WorkBuddy.app
 <details>
 <summary><b>左下角 / 好友列表显示的用户名不是我的账号</b></summary>
 
-主题会从 WorkBuddy 用户菜单读取当前登录账号，账号异步加载完成后 1.5 秒内自动同步；侧栏收起或未登录时会先显示「WorkBuddy 用户」。
+主题优先从 WorkBuddy 账号服务读取当前登录账号，账号异步加载完成后自动同步，侧栏收起 / 冷启动也能显示；账号服务不可用时回退用户菜单 DOM，未登录时显示「WorkBuddy 用户」。
 
 如果一直显示错误名字：确认装的是最新版本（`git pull` 后重新运行安装脚本），并展开一次左侧栏让账号菜单渲染；仍然不对请提 Issue 附 WorkBuddy 版本和脱敏截图。
 </details>

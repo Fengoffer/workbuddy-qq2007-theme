@@ -39,6 +39,9 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("qq7-account-name", self.js)
         self.assertIn("accountNameCache", self.js)
         self.assertIn("INVALID_ACCOUNT_NAMES", self.js)
+        self.assertIn("__genieAccountService", self.js)
+        self.assertIn("readServiceAccount", self.js)
+        self.assertIn("isLoggedIn", self.js)
 
     def test_macos_titlebar_zone_exists(self) -> None:
         self.assertIn("qq7-titlebar-jszone", self.js)
