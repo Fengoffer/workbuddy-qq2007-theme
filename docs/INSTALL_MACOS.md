@@ -18,6 +18,8 @@ ls -la /Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/renderer
 
 ```bash
 git clone --depth 1 https://github.com/Fengoffer/workbuddy-qq2007-theme.git
+# 或者 Gitee 镜像
+# git clone --depth 1 https://gitee.com/fengoffer/workbuddy-qq2007-theme.git
 cd workbuddy-qq2007-theme
 bash scripts/macos/install.sh
 ```

@@ -21,6 +21,7 @@ pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null || true
 
 # 2. 克隆到临时目录
 TMP="$(mktemp -d)"
+# 国内网络可换成 https://gitee.com/fengoffer/workbuddy-qq2007-theme.git
 git clone --depth 1 https://github.com/Fengoffer/workbuddy-qq2007-theme.git "$TMP/wbqq7"
 
 # 3. 安装

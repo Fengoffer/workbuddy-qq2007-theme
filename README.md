@@ -14,6 +14,8 @@
 
 ---
 
+> **仓库地址：** GitHub · https://github.com/Fengoffer/workbuddy-qq2007-theme ｜ Gitee 镜像 · https://gitee.com/fengoffer/workbuddy-qq2007-theme
+>
 > 这是一个 **WorkBuddy 5.8.3** 的第三方 QQ 2007 怀旧皮肤。它只改动 WorkBuddy.app 里的主题资源，不修改 `app.asar`、不读写你的会话、账号、文件或任何用户数据。安装前会自动备份，随时可以一键恢复原版。
 >
 > **非腾讯 / 非 WorkBuddy 官方项目，与两家公司均无关联。** 仅供个人学习、怀旧和本地美化使用。
@@ -132,7 +134,10 @@
 ### macOS（推荐）
 
 ```bash
+# GitHub
 git clone --depth 1 https://github.com/Fengoffer/workbuddy-qq2007-theme.git
+# 国内网络可改用 Gitee 镜像
+# git clone --depth 1 https://gitee.com/fengoffer/workbuddy-qq2007-theme.git
 cd workbuddy-qq2007-theme
 bash scripts/macos/install.sh
 ```
@@ -197,6 +202,7 @@ powershell -ExecutionPolicy Bypass -File scripts\windows\uninstall.ps1
 ```text
 你是我的 macOS/Windows 桌面助手。请帮我安装 WorkBuddy QQ 2007 主题：
 仓库：https://github.com/Fengoffer/workbuddy-qq2007-theme
+（国内网络可用 Gitee 镜像：https://gitee.com/fengoffer/workbuddy-qq2007-theme）
 要求：
 1. 先完全退出 WorkBuddy，确认没有 WorkBuddy 进程在运行；
 2. 用 git clone --depth 1 把仓库克隆到临时目录；
@@ -306,6 +312,13 @@ workbuddy-qq2007-theme/
 ├── THIRD_PARTY_NOTICES.md
 └── README.md
 ```
+
+## 镜像仓库
+
+- GitHub：https://github.com/Fengoffer/workbuddy-qq2007-theme
+- Gitee：https://gitee.com/fengoffer/workbuddy-qq2007-theme
+
+两个仓库内容同步更新；国内访问 Gitee 更快，AI 一键安装也可以把 clone 地址换成 Gitee。
 
 ## 贡献
 
