@@ -306,6 +306,8 @@
       rawId: id,
       marketExpertId: item.marketExpertId || id,
       source: item.source || "builtin",
+      expertType: item.expertType || "",
+      canSummon: item.expertType !== "team",
       name,
       subtitle,
       avatar: item.avatarUrl || item.avatar || "",
@@ -334,34 +336,62 @@
     const count = root && root.querySelector(`.qq7-group-count[data-count="${key}"]`);
     if (!list) return;
     if (count) count.textContent = `(${items.length})`;
+    const scrollTop = list.scrollTop;
     if (!items.length) {
       list.innerHTML = `<div class="qq7-friend-empty">${escapeHtml(emptyText)}</div>`;
+      list.scrollTop = scrollTop;
+      applyFriendFilter();
       return;
     }
     list.innerHTML = items.slice(0, 200).map((item) => {
       const avatar = item.avatar
         ? `<img src="${escapeHtml(item.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
         : "";
-      const summon = item.kind === "expert"
-        ? `<button class="qq7-friend-summon" type="button" data-expert-id="${escapeHtml(item.rawId)}" data-expert-market="${escapeHtml(item.marketExpertId)}" data-expert-source="${escapeHtml(item.source)}" data-expert-name="${escapeHtml(item.name)}" aria-label="召唤${escapeHtml(item.name)}">召唤</button>`
+      const summon = item.kind === "expert" && item.canSummon
+        ? `<button class="qq7-friend-summon" type="button" tabindex="-1" data-expert-id="${escapeHtml(item.rawId)}" data-expert-market="${escapeHtml(item.marketExpertId)}" data-expert-source="${escapeHtml(item.source)}" data-expert-name="${escapeHtml(item.name)}" aria-label="召唤${escapeHtml(item.name)}">召唤</button>`
         : "";
-      return `<div class="qq7-friend-row" data-kind="${escapeHtml(item.kind)}" title="${escapeHtml(item.name + " · " + item.subtitle)}">
+      const search = `${item.name} ${item.subtitle}`;
+      return `<div class="qq7-friend-row" data-kind="${escapeHtml(item.kind)}" data-search="${escapeHtml(search)}" title="${escapeHtml(item.name + " · " + item.subtitle)}">
         <span class="qq7-friend-row-avatar">${avatar}</span>
         <span class="qq7-friend-row-text"><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.subtitle)}</small></span>
         ${summon}
         <span class="qq7-friend-row-dot"></span>
       </div>`;
     }).join("");
+    list.scrollTop = scrollTop;
+    applyFriendFilter();
   }
 
   let friendRefreshSeq = 0;
+  let lastFriendSignature = "";
 
-  function readHomeDraft() {
+  function applyFriendFilter() {
+    const input = root && root.querySelector("[data-friend-filter]");
+    const query = (input && input.value ? input.value : "").trim().toLowerCase();
+    if (!root) return;
+    root.querySelectorAll(".qq7-friend-row").forEach((row) => {
+      const haystack = (row.dataset.search || row.textContent || "").toLowerCase();
+      row.hidden = !!query && !haystack.includes(query);
+      if (row.hidden) row.classList.remove("is-keyboard-active");
+    });
+    root.querySelectorAll(".qq7-friend-list").forEach((list) => {
+      if (document.activeElement !== list) return;
+      const rows = [...list.querySelectorAll(".qq7-friend-row")].filter((row) => !row.hidden);
+      if (!rows.length) return;
+      if (!rows.some((row) => row.classList.contains("is-keyboard-active"))) {
+        rows[0].classList.add("is-keyboard-active");
+      }
+    });
+  }
+
+  function hasHomeDraft() {
     const editor = document.querySelector(".wb-home-route__input [contenteditable='true']");
-    if (!editor) return "";
+    if (!editor) return false;
     const copy = editor.cloneNode(true);
     copy.querySelectorAll("[data-slate-placeholder='true']").forEach((node) => node.remove());
-    return (copy.textContent || "").replace(/\ufeff/g, "").trim();
+    if ((copy.textContent || "").replace(/\ufeff/g, "").trim()) return true;
+    const inputRoot = document.querySelector(".wb-home-route__input");
+    return !!(inputRoot && inputRoot.querySelector('img[src], [class*="attachment"], [class*="file-chip"], [class*="upload-item"]'));
   }
 
   /* 好友列表：专家 = 最近使用 + 自定义/云同步 + 完整专家目录；技能 = 已安装技能 */
@@ -400,12 +430,17 @@
       } catch (error) {}
     }
     if (seq !== friendRefreshSeq) return;
+    const signature = `${[...experts.keys()].join("|")}::${[...skills.keys()].join("|")}`;
+    if (signature === lastFriendSignature) return;
+    lastFriendSignature = signature;
     renderFriendGroup("expert", [...experts.values()], "暂无 WorkBuddy 专家");
     renderFriendGroup("skill", [...skills.values()], "暂无已安装的 WorkBuddy 技能");
   }
 
   async function summonFriendExpert(button) {
     if (!window.wb?.experts || !window.wb?.conversations) return;
+    if (button.dataset.summoning === "1") return;
+    button.dataset.summoning = "1";
     const original = button.textContent;
     button.disabled = true;
     button.textContent = "召唤中…";
@@ -439,7 +474,7 @@
         locale: "zh-CN",
         summonedAt: Date.now()
       };
-      const draft = readHomeDraft();
+      const draft = hasHomeDraft();
       const payload = { target: { type: "new" }, expert: selection };
       if (draft) {
         // 保留用户当前草稿，只切换专家
@@ -453,11 +488,15 @@
       window.setTimeout(refreshFriendData, 800);
     } catch (error) {
       console.warn("[QQ7] summon expert failed", error);
-      button.textContent = "召唤失败";
-      window.setTimeout(() => {
-        button.disabled = false;
-        button.textContent = original;
-      }, 1200);
+      if (button.isConnected) {
+        button.textContent = "召唤失败";
+        window.setTimeout(() => {
+          if (!button.isConnected) return;
+          button.disabled = false;
+          button.textContent = original;
+          delete button.dataset.summoning;
+        }, 1200);
+      }
     }
   }
 
@@ -481,15 +520,16 @@
         <div class="qq7-friend-tools">
           ${TOOLS.map((t) => `<div class="qq7-friend-tool" data-action="${t.action}" title="${t.label}">${icon(t.icon)}<span>${t.label}</span></div>`).join("")}
         </div>
+        <div class="qq7-friend-filter"><input type="search" placeholder="筛选专家 / 技能…" data-friend-filter aria-label="筛选专家或技能"></div>
         <div class="qq7-group" data-group="expert">
           <div class="qq7-group-title"><span class="qq7-caret">▼</span>专家 <span class="qq7-group-count" data-count="expert">(0)</span></div>
-          <div class="qq7-friend-list" data-list="expert">
+          <div class="qq7-friend-list" data-list="expert" tabindex="0" aria-label="专家列表：上下方向键选择，回车召唤">
             <div class="qq7-friend-empty">正在读取 WorkBuddy 专家…</div>
           </div>
         </div>
         <div class="qq7-group" data-group="skill">
           <div class="qq7-group-title"><span class="qq7-caret">▼</span>技能 <span class="qq7-group-count" data-count="skill">(0)</span></div>
-          <div class="qq7-friend-list" data-list="skill">
+          <div class="qq7-friend-list" data-list="skill" tabindex="0" aria-label="技能列表">
             <div class="qq7-friend-empty">正在读取 WorkBuddy 技能…</div>
           </div>
         </div>
@@ -683,6 +723,42 @@
       event.stopPropagation();
       summonFriendExpert(button);
     });
+
+    root.querySelector("[data-friend-filter]")?.addEventListener("input", applyFriendFilter);
+
+    root.addEventListener("focusin", (event) => {
+      const list = event.target.closest && event.target.closest(".qq7-friend-list");
+      if (!list || event.target !== list) return;
+      const rows = [...list.querySelectorAll(".qq7-friend-row")].filter((row) => row.offsetParent !== null);
+      if (!rows.length) return;
+      rows.forEach((row) => row.classList.remove("is-keyboard-active"));
+      rows[0].classList.add("is-keyboard-active");
+    });
+
+    root.addEventListener("keydown", (event) => {
+      const list = event.target.closest && event.target.closest(".qq7-friend-list");
+      if (!list) return;
+      const rows = [...list.querySelectorAll(".qq7-friend-row")].filter((row) => row.offsetParent !== null);
+      if (!rows.length) return;
+      let active = rows.findIndex((row) => row.classList.contains("is-keyboard-active"));
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (active < 0) active = 0;
+        else active = Math.max(0, Math.min(rows.length - 1, active + (event.key === "ArrowDown" ? 1 : -1)));
+        rows.forEach((row) => row.classList.remove("is-keyboard-active"));
+        rows[active].classList.add("is-keyboard-active");
+        rows[active].scrollIntoView({ block: "nearest" });
+      } else if (event.key === "Enter") {
+        if (active < 0) active = 0;
+        const summon = rows[active] && rows[active].querySelector(".qq7-friend-summon");
+        if (summon) {
+          event.preventDefault();
+          summonFriendExpert(summon);
+        }
+      } else if (event.key === "Escape") {
+        list.blur();
+      }
+    }, true);
 
     const collapse = root.querySelector(".qq7-friend-collapse");
     if (collapse) {

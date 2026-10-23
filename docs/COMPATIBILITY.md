@@ -90,6 +90,7 @@ Test-Path "$env:LOCALAPPDATA\Programs\WorkBuddy\resources\app.asar.unpacked\rend
 | macOS 原生标题栏高度按 38px 适配 | 不同系统版本可能偏移热区分界 | 调整 CSS 变量 `--qq7-native-titlebar` |
 | 账号名优先读 WorkBuddy 账号服务（`__genieAccountService`），回退用户菜单 DOM | 未来版本改内部服务或菜单结构时可能先显示「WorkBuddy 用户」 | 更新 `readServiceAccount` / `ACCOUNT_NAME_SELECTORS` |
 | 右侧「专家」组按最近使用 → 自定义 / 云同步 → 完整目录排序 | 目录顺序依赖 WorkBuddy 接口，未按行业分类分组 | 后续可按分类展示 |
+| 团队专家不在好友面板直接召唤 | 团队召唤需要 WorkBuddy 原生团队 / 财务确认，主题不绕过确认流程 | 到专家中心召唤团队 |
 
 ## 6. 反馈模板
 
