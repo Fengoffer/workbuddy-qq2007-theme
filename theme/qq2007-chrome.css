@@ -186,6 +186,14 @@ body.qq7-shell [data-view-id="sources-panel"] { width: 0 !important; }
   background: #b9cfe2; box-shadow: 1px 0 #fff;
 }
 
+/* macOS：原生 -webkit-app-region: drag 区域不会把鼠标事件派发给渲染进程，
+   双击缩放只在系统标题栏范围生效。开启 qq7-js-window-chrome 后改由
+   qq2007-chrome.js 接管拖动与双击缩放，覆盖整个标题栏 + 菜单栏。 */
+body.qq7-js-window-chrome #qq7-root .qq7-titlebar,
+body.qq7-js-window-chrome #qq7-root .qq7-menubar {
+  -webkit-app-region: no-drag;
+}
+
 /* 图标精灵（14 个 24px 单元） */
 #qq7-root .qq7-ico {
   width: 16px; height: 16px; flex: 0 0 16px;

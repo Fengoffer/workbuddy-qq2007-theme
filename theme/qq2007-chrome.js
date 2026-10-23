@@ -241,6 +241,48 @@
     `;
   }
 
+  /* macOS：原生 -webkit-app-region: drag 区域不会把鼠标事件派发给渲染进程，
+     双击缩放只在系统标题栏范围生效。这里改用 WorkBuddy 暴露的窗口 API 接管
+     标题栏 / 菜单栏的拖动与双击缩放，让整个顶部条都能拖动和双击铺满。 */
+  function setupWindowChrome() {
+    if (!/^Mac/.test(navigator.platform || "")) return;
+    const desktopWindow = window.workbuddyDesktop?.window?.getCurrentWindow?.();
+    if (!desktopWindow || typeof desktopWindow.startDrag !== "function" || typeof desktopWindow.maximize !== "function") return;
+
+    document.body.classList.add("qq7-js-window-chrome");
+
+    const INTERACTIVE = ".qq7-menu-item, .qq7-title-btns, .qq7-friend, .qq7-statusbar, button, a, input, textarea, select, [contenteditable='true']";
+    const isInteractive = (target) => target instanceof Element && Boolean(target.closest(INTERACTIVE));
+    const swallow = (promise) => { if (promise && typeof promise.catch === "function") promise.catch(() => {}); };
+
+    let dragging = false;
+    const startDrag = (event) => {
+      if (event.button !== 0 || event.detail > 1 || isInteractive(event.target)) return;
+      dragging = true;
+      swallow(desktopWindow.startDrag());
+    };
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (typeof desktopWindow.stopDrag === "function") swallow(desktopWindow.stopDrag());
+    };
+    const toggleZoom = (event) => {
+      if (isInteractive(event.target)) return;
+      event.preventDefault();
+      endDrag();
+      swallow(desktopWindow.maximize());
+    };
+
+    for (const selector of [".qq7-titlebar", ".qq7-menubar"]) {
+      const el = root.querySelector(selector);
+      if (!el) continue;
+      el.addEventListener("mousedown", startDrag);
+      el.addEventListener("dblclick", toggleZoom);
+    }
+    window.addEventListener("mouseup", endDrag);
+    window.addEventListener("blur", endDrag);
+  }
+
   function buildChrome() {
     root = document.createElement("div");
     root.id = "qq7-root";
@@ -312,6 +354,7 @@
     syncSkin();
     watchLayout();
     beginDragTracking();
+    setupWindowChrome();
   }
 
   let dragActive = false;
