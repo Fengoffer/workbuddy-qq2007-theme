@@ -38,6 +38,7 @@
 
   let root = null;
   let titleEl = null;
+  let accountNameCache = "";
 
   function skinEnabled() {
     const link = document.querySelector(SKIN_LINK_SELECTOR);
@@ -52,10 +53,43 @@
     if (root) root.style.display = on ? "" : "none";
   }
 
+  const ACCOUNT_NAME_SELECTORS = [
+    ".user-menu-trigger-name",
+    "[class*='user-menu-trigger-name']:not(.user-menu-trigger-name-group)",
+  ];
+  const INVALID_ACCOUNT_NAMES = /^(登录|重新登录|立即登录|请登录|未登录|log ?in|sign ?in|relogin)$/i;
+
+  function readAccountName() {
+    for (const selector of ACCOUNT_NAME_SELECTORS) {
+      for (const el of document.querySelectorAll(selector)) {
+        const name = (el.textContent || "").replace(/\s+/g, " ").trim();
+        if (!name || name.length > 40) continue;
+        if (INVALID_ACCOUNT_NAMES.test(name)) continue;
+        return name;
+      }
+    }
+    return "";
+  }
+
   function displayName() {
-    const el = document.querySelector(".user-menu-trigger-name");
-    const name = el && el.textContent ? el.textContent.trim() : "";
-    return name || "小锋";
+    const resolved = readAccountName();
+    if (resolved) accountNameCache = resolved;
+    return accountNameCache || "WorkBuddy 用户";
+  }
+
+  /* 账号名是异步加载的：主题注入时可能还没渲染出来，先显示占位，
+     之后定时同步到状态栏 / 好友面板，避免把作者名或旧值写死。 */
+  function updateAccountName() {
+    if (!root) return;
+    const name = displayName();
+    root.querySelectorAll(".qq7-account-name").forEach((el) => {
+      if (el.textContent !== name) el.textContent = name;
+    });
+  }
+
+  function watchAccountName() {
+    updateAccountName();
+    window.setInterval(updateAccountName, 1500);
   }
 
   function appTitle() {
@@ -210,7 +244,7 @@
           <div class="qq7-buddy" title="打开最近会话">
             <span class="qq7-buddy-avatar"></span>
             <span class="qq7-buddy-text">
-              <span class="qq7-buddy-name">${name}</span>
+              <span class="qq7-buddy-name qq7-account-name">${name}</span>
               <span class="qq7-buddy-sign">● 在线 · 正在使用 WorkBuddy</span>
             </span>
           </div>
@@ -228,7 +262,7 @@
           <div class="qq7-group-title"><span class="qq7-caret">▼</span>环境信息</div>
           <div class="qq7-info-row"><span>客户端</span><b>WorkBuddy 5.8.3</b></div>
           <div class="qq7-info-row"><span>皮肤</span><b>QQ 2007 (深度仿制)</b></div>
-          <div class="qq7-info-row"><span>账号</span><b>${name}</b></div>
+          <div class="qq7-info-row"><span>账号</span><b class="qq7-account-name">${name}</b></div>
           <div class="qq7-info-row"><span>状态</span><b>在线</b></div>
         </div>
         <div class="qq7-group">
@@ -344,7 +378,7 @@
       <div class="qq7-statusbar">
         <span class="qq7-status-left">
           ${icon(12)}
-          <b>${displayName()} LV07</b>
+          <b class="qq7-account-name">${displayName()}</b> LV07
           <span>在线</span>
           <span class="qq7-status-quote">别迷恋姐，姐只是个传说。</span>
         </span>
@@ -400,6 +434,7 @@
     watchLayout();
     beginDragTracking();
     setupWindowChrome();
+    watchAccountName();
   }
 
   let dragActive = false;
