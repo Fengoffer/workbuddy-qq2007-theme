@@ -55,6 +55,9 @@ Test-Path "$env:LOCALAPPDATA\Programs\WorkBuddy\resources\app.asar.unpacked\rend
 - [ ] QQ 宠物出现：待机呼吸、点击互动、输入时抬头、切会话跑动、选项举牌；
 - [ ] 设置 / 文件查看 / 浏览器等次级窗口是原生样式，没有被 QQ 外壳遮挡；
 - [ ] 点击菜单栏「原版」能关闭皮肤；
+- [ ] 左下角状态栏、右侧好友列表、环境信息里的用户名与 WorkBuddy 登录账号一致；切换 / 退出账号后自动更新或显示「WorkBuddy 用户」；
+- [ ] 拖动标题栏 / 菜单栏空白处可移动窗口；最大化状态下拖动会先还原再跟随；
+- [ ] 双击标题栏顶部（系统原生区）与菜单栏空白处都能缩放；
 - [ ] 卸载后 WorkBuddy 完全恢复原版，且启动正常。
 
 ## 4. WorkBuddy 升级后的适配流程
@@ -84,6 +87,7 @@ Test-Path "$env:LOCALAPPDATA\Programs\WorkBuddy\resources\app.asar.unpacked\rend
 | WorkBuddy 更新可能改变通知音路径 | 滴滴声可能失效 | 更新 `theme/qq2008-notify.js` 的拦截路径 |
 | 皮肤开关依赖 `localStorage` | 清缓存后恢复默认（开启） | 用菜单栏「原版」按钮切换 |
 | 仅主窗口应用皮肤 | 次级窗口保持原生 | 设计如此，避免遮挡原生功能 |
+| macOS 原生标题栏高度按 38px 适配 | 不同系统版本可能偏移热区分界 | 调整 CSS 变量 `--qq7-native-titlebar` |
 
 ## 6. 反馈模板
 

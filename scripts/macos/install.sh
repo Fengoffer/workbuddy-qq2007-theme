@@ -8,6 +8,9 @@ REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 THEME_DIR="$REPO_DIR/theme"
 COMMON_DIR="$REPO_DIR/scripts/common"
 
+# shellcheck source=common.sh
+. "$SCRIPT_DIR/common.sh"
+
 APP="${WORKBUDDY_APP:-/Applications/WorkBuddy.app}"
 LAUNCH=1
 FORCE=0
@@ -56,19 +59,11 @@ if [ "$VERSION" != "5.8.3" ] && [ "$FORCE" -ne 1 ]; then
   exit 2
 fi
 
-# 1. 退出 WorkBuddy
-WORKBUDDY_PROC_PATTERN="$APP/Contents/MacOS/WorkBuddy"
-HELPER_PATTERN="$APP/Contents/Frameworks/WorkBuddy Helper"
-if pgrep -f "$WORKBUDDY_PROC_PATTERN" >/dev/null 2>&1 || pgrep -f "$HELPER_PATTERN" >/dev/null 2>&1; then
+# 1. 退出 WorkBuddy（5.8.3 主进程是 MacOS/Electron，不是 MacOS/WorkBuddy）
+if workbuddy_is_running "$APP"; then
   echo "正在退出 WorkBuddy ..."
-  if [ "$APP" = "/Applications/WorkBuddy.app" ]; then
-    osascript -e 'tell application "WorkBuddy" to quit' >/dev/null 2>&1 || true
-  fi
-  for _ in $(seq 1 20); do
-    if ! pgrep -f "$WORKBUDDY_PROC_PATTERN" >/dev/null 2>&1 && ! pgrep -f "$HELPER_PATTERN" >/dev/null 2>&1; then break; fi
-    sleep 0.5
-  done
-  if pgrep -f "$WORKBUDDY_PROC_PATTERN" >/dev/null 2>&1; then
+  request_workbuddy_quit
+  if ! wait_workbuddy_exit "$APP" 20; then
     echo "WorkBuddy 仍在运行，请先 Command+Q 完全退出后再安装。"
     exit 1
   fi
@@ -91,7 +86,7 @@ cat > "$BK/metadata.json" <<EOF
   "indexTargetSize": $TARGET,
   "asarSha256": "$(shasum -a 256 "$ASAR" | awk '{print $1}')",
   "indexSha256": "$(shasum -a 256 "$INDEX" | awk '{print $1}')",
-  "themeVersion": "1.0.0"
+  "themeVersion": "1.0.1"
 }
 EOF
 shasum -a 256 "$ASAR" "$INDEX" > "$BK/SHA256.txt"
@@ -144,5 +139,6 @@ echo "回滚命令: bash \"$REPO_DIR/scripts/macos/uninstall.sh\""
 echo "如需恢复 app.asar: 见 $BK/ROLLBACK.md"
 if [ "$LAUNCH" -eq 1 ]; then
   echo "正在启动 WorkBuddy ..."
-  open -a "$APP" || true
+  # 从 Electron 型 Agent / 终端环境调用时，避免继承 ELECTRON_RUN_AS_NODE 导致 App 以 Node 模式秒退
+  env -u ELECTRON_RUN_AS_NODE open -a "$APP" || true
 fi

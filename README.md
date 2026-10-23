@@ -290,6 +290,14 @@ open -a /Applications/WorkBuddy.app
 </details>
 
 <details>
+<summary><b>左下角 / 好友列表显示的用户名不是我的账号</b></summary>
+
+主题会从 WorkBuddy 用户菜单读取当前登录账号，账号异步加载完成后 1.5 秒内自动同步；侧栏收起或未登录时会先显示「WorkBuddy 用户」。
+
+如果一直显示错误名字：确认装的是最新版本（`git pull` 后重新运行安装脚本），并展开一次左侧栏让账号菜单渲染；仍然不对请提 Issue 附 WorkBuddy 版本和脱敏截图。
+</details>
+
+<details>
 <summary><b>Windows 支持吗？</b></summary>
 
 提供实验性脚本，但仅在 WorkBuddy 具有 unpacked renderer 结构时可用；作者没有 Windows 实机，欢迎测试反馈。

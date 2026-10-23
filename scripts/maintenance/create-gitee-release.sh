@@ -34,12 +34,16 @@ if [ -z "$TOKEN" ]; then
   exit 1
 fi
 
+# token 写入 600 权限的临时文件，避免出现在 curl 的进程参数里
+TOKEN_FILE="$(mktemp)"
 RESPONSE="$(mktemp)"
-trap 'rm -f "$RESPONSE"' EXIT
+chmod 600 "$TOKEN_FILE"
+printf '%s' "$TOKEN" > "$TOKEN_FILE"
+trap 'rm -f "$TOKEN_FILE" "$RESPONSE"' EXIT
 
 HTTP_CODE="$(curl -sS -o "$RESPONSE" -w '%{http_code}' --max-time 60 -X POST \
   "https://gitee.com/api/v5/repos/$REPO/releases" \
-  --data-urlencode "access_token=$TOKEN" \
+  --data-urlencode "access_token@$TOKEN_FILE" \
   --data-urlencode "tag_name=$TAG" \
   --data-urlencode "name=$TITLE" \
   --data-urlencode "body@$NOTES_FILE" \

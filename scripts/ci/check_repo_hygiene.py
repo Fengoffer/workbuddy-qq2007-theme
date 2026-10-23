@@ -39,6 +39,7 @@ REQUIRED_PATHS = (
     "theme/qq7pet/ruffle.js",
     "scripts/common/patch_index.py",
     "scripts/common/asar_index_size.py",
+    "scripts/macos/common.sh",
     "scripts/macos/install.sh",
     "scripts/macos/uninstall.sh",
     "scripts/windows/install.ps1",

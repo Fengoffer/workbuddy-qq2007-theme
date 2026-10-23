@@ -5,6 +5,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 COMMON_DIR="$REPO_DIR/scripts/common"
+
+# shellcheck source=common.sh
+. "$SCRIPT_DIR/common.sh"
 APP="${WORKBUDDY_APP:-/Applications/WorkBuddy.app}"
 RESTORE_ASAR=""
 
@@ -22,11 +25,13 @@ done
 RES="$APP/Contents/Resources"; ASAR="$RES/app.asar"; UP="$RES/app.asar.unpacked/renderer"; INDEX="$UP/index.html"
 [ -f "$ASAR" ] || { echo "找不到 $ASAR"; exit 1; }
 
-if pgrep -f "$APP/Contents/MacOS/WorkBuddy" >/dev/null 2>&1; then
+if workbuddy_is_running "$APP"; then
   echo "正在退出 WorkBuddy ..."
-  osascript -e 'tell application "WorkBuddy" to quit' >/dev/null 2>&1 || true
-  sleep 4
-  pgrep -f "$APP/Contents/MacOS/WorkBuddy" >/dev/null 2>&1 && { echo "请先完全退出 WorkBuddy。"; exit 1; }
+  request_workbuddy_quit
+  if ! wait_workbuddy_exit "$APP" 20; then
+    echo "请先完全退出 WorkBuddy。"
+    exit 1
+  fi
 fi
 
 if [ -n "$RESTORE_ASAR" ]; then

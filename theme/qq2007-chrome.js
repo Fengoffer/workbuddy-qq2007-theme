@@ -57,22 +57,32 @@
     ".user-menu-trigger-name",
     "[class*='user-menu-trigger-name']:not(.user-menu-trigger-name-group)",
   ];
-  const INVALID_ACCOUNT_NAMES = /^(登录|重新登录|立即登录|请登录|未登录|log ?in|sign ?in|relogin)$/i;
+  const INVALID_ACCOUNT_NAMES = /^(登录|重新登录|立即登录|请登录|未登录|退出登录|登录\s*\/\s*注册|log ?in|sign ?in|relogin)$/i;
 
+  /* 返回账号名：字符串=可用；null=明确的未登录 / 登录过期状态；""=暂时没读到 */
   function readAccountName() {
+    let loginPlaceholder = false;
     for (const selector of ACCOUNT_NAME_SELECTORS) {
-      for (const el of document.querySelectorAll(selector)) {
+      const candidates = [...document.querySelectorAll(selector)];
+      // 优先可见节点，避免读到隐藏的旧菜单
+      candidates.sort((a, b) => Number(b.getClientRects().length > 0) - Number(a.getClientRects().length > 0));
+      for (const el of candidates) {
         const name = (el.textContent || "").replace(/\s+/g, " ").trim();
-        if (!name || name.length > 40) continue;
-        if (INVALID_ACCOUNT_NAMES.test(name)) continue;
+        if (!name || name.length > 64) continue;
+        if (INVALID_ACCOUNT_NAMES.test(name)) { loginPlaceholder = true; continue; }
         return name;
       }
     }
-    return "";
+    return loginPlaceholder ? null : "";
   }
 
   function displayName() {
     const resolved = readAccountName();
+    if (resolved === null) {
+      // 登录过期 / 退出登录：清掉旧账号，避免继续显示上一个账号
+      accountNameCache = "";
+      return "WorkBuddy 用户";
+    }
     if (resolved) accountNameCache = resolved;
     return accountNameCache || "WorkBuddy 用户";
   }
@@ -80,7 +90,7 @@
   /* 账号名是异步加载的：主题注入时可能还没渲染出来，先显示占位，
      之后定时同步到状态栏 / 好友面板，避免把作者名或旧值写死。 */
   function updateAccountName() {
-    if (!root) return;
+    if (!root || document.body.classList.contains("qq7-off")) return;
     const name = displayName();
     root.querySelectorAll(".qq7-account-name").forEach((el) => {
       if (el.textContent !== name) el.textContent = name;
@@ -275,12 +285,12 @@
     `;
   }
 
-  /* macOS：标题栏保持原生 -webkit-app-region: drag，拖动与系统双击缩放都由
-     macOS 处理，最跟手。菜单栏在原生 drag 区里收不到鼠标事件、系统双击也不覆盖
-     它，所以改成普通区域后由这里接管：空白处拖动走 startDrag / stopDrag，双击
-     调 maximize（WorkBuddy 内部即 zoom / unzoom 切换），菜单项保持点击。
-     拖动超过 4px 才真正开始，窗口已最大化时先还原再拖
-     （WorkBuddy 的拖拽控制器在最大化状态下会直接 no-op）。 */
+  /* macOS 主窗口是 titleBarStyle: hiddenInset，系统标题栏只覆盖顶部约 38px：
+     这段保留原生 -webkit-app-region: drag，拖动和双击缩放都由 macOS 处理，最顺滑。
+     标题栏下沿（.qq7-titlebar-jszone）和菜单栏收不到系统双击，由这里接管：
+     空白处拖动走 startDrag / stopDrag，双击调 maximize（WorkBuddy 内部即
+     zoom / unzoom 切换），菜单项保持点击。拖动超过 4px 才真正开始；窗口最大化
+     时先还原、等 isMaximized 真正变 false 再拖（拖拽控制器在最大化时会 no-op）。 */
   function setupWindowChrome() {
     if (!/^Mac/.test(navigator.platform || "")) return;
     const desktopWindow = window.workbuddyDesktop?.window?.getCurrentWindow?.();
@@ -296,7 +306,7 @@
     let pending = null;
     let dragging = false;
     let restoreTimer = 0;
-    let zoomLock = 0;
+    let zoomHandled = false;
 
     const beginDrag = () => {
       if (!pointerDown || dragging) return;
@@ -313,17 +323,19 @@
     };
     // 双击缩放在第二次按下时立即触发（系统标题栏也是这样），比等 dblclick 更跟手
     const triggerZoom = () => {
-      zoomLock = performance.now();
+      zoomHandled = true;
       endDrag();
       swallow(desktopWindow.maximize());
     };
     const onMouseDown = (event) => {
       if (event.button !== 0 || isInteractive(event.target)) return;
-      if (event.detail >= 2) {
+      if (event.detail === 2) {
         event.preventDefault();
         triggerZoom();
         return;
       }
+      if (event.detail > 2) return;
+      zoomHandled = false;
       pointerDown = true;
       pending = { x: event.clientX, y: event.clientY };
     };
@@ -335,16 +347,24 @@
       Promise.resolve(maximized).then((max) => {
         if (!pointerDown) return;
         if (!max) { beginDrag(); return; }
+        // 先还原窗口，轮询到真正非最大化后再开始拖（固定 160ms 在慢机器上会失败）
         swallow(desktopWindow.maximize());
-        restoreTimer = window.setTimeout(() => {
-          restoreTimer = 0;
-          beginDrag();
-        }, 160);
+        const deadline = performance.now() + 1200;
+        const waitNormal = () => {
+          if (!pointerDown) return;
+          const check = typeof desktopWindow.isMaximized === "function" ? desktopWindow.isMaximized() : false;
+          Promise.resolve(check).then((stillMax) => {
+            if (!pointerDown) return;
+            if (!stillMax || performance.now() > deadline) { beginDrag(); return; }
+            restoreTimer = window.setTimeout(() => { restoreTimer = 0; waitNormal(); }, 60);
+          }).catch(() => beginDrag());
+        };
+        restoreTimer = window.setTimeout(() => { restoreTimer = 0; waitNormal(); }, 60);
       }).catch(() => beginDrag());
     };
     const onDoubleClick = (event) => {
       if (isInteractive(event.target)) return;
-      if (performance.now() - zoomLock < 600) return;
+      if (zoomHandled) { zoomHandled = false; return; }
       event.preventDefault();
       triggerZoom();
     };
@@ -353,9 +373,10 @@
       const el = root.querySelector(selector);
       if (!el) continue;
       el.addEventListener("mousedown", onMouseDown);
-      el.addEventListener("pointermove", onPointerMove);
       el.addEventListener("dblclick", onDoubleClick);
     }
+    // 指针可能移出热区（甚至进入原生 drag 区），尽量在 window 上收 move
+    window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", endDrag);
     window.addEventListener("blur", endDrag);
@@ -369,7 +390,7 @@
       <div class="qq7-titlebar">
         <span class="qq7-title-ico"></span>
         <span class="qq7-title-text">WorkBuddy 2007</span>
-        <div class="qq7-titlebar-jszone" aria-hidden="true"></div>
+        <div class="qq7-titlebar-jszone"></div>
       </div>
       <div class="qq7-menubar">
         ${MENU.map((m) => `<span class="qq7-menu-item" data-action="${m.action}">${icon(m.icon)}<span>${m.label}</span></span>`).join("")}

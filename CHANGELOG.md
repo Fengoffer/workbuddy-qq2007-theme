@@ -1,16 +1,23 @@
 # Changelog
 
-## Unreleased
+## 1.0.1 (2026-10-23)
 
 ### 修复
-- 修复状态栏与好友面板用户名写死、不跟随登录账号的问题：改为从 WorkBuddy 用户菜单实时读取，账号异步加载完成后 1.5s 内自动同步到状态栏 / 好友列表 / 环境信息；未登录或读取失败时显示「WorkBuddy 用户」
-- 修复安装主题后顶部标题栏无法拖动窗口、双击不能缩放的问题：主题把 `.teams-container` 下移到 94px 后，原版 `.workbuddy-topbar` 的 `-webkit-app-region: drag` 拖拽区已不在窗口顶部；现由 `.qq7-titlebar` 接管拖拽区
-- macOS 顶部条拆分：标题栏顶部约 38px 保留系统原生拖拽与双击缩放（最顺滑）；标题栏下沿热区与菜单栏由主题接管（第二次按下即触发缩放、拖动超过 4px 才 `startDrag`、最大化时先还原再拖），整条顶部条都能拖动和双击，菜单项保持点击
-- 窗口缩放时把 resize / ResizeObserver 触发的布局同步合并到下一帧执行，减少放大缩小卡顿
+- 状态栏 / 好友列表 / 环境信息里的用户名改为实时读取 WorkBuddy 登录账号：账号异步加载完成后自动同步；登录过期或退出登录时清空旧缓存并显示「WorkBuddy 用户」，不再写死作者昵称
+- 账号名读取优先选择可见节点，避免隐藏的旧菜单导致显示上一个账号
+- macOS 顶部条拆分：标题栏顶部约 38px 保留系统原生拖拽与双击缩放（最顺滑）；标题栏下沿热区与菜单栏由主题接管，整条顶部条都能拖动和双击，菜单项保持点击
+- 拖动超过 4px 才真正开始；窗口最大化时先还原并轮询到非最大化后再拖，避免慢机器上拖动失效
+- 双击缩放改为第二次按下立即触发，并按手势去重，避免卡顿时双触发
+- 窗口缩放时把 resize / ResizeObserver 触发的布局同步合并到下一帧，减少放大缩小卡顿
+
+### 安装与安全
+- 修正 macOS 安装 / 卸载脚本对 WorkBuddy 5.8.3 主进程名（`Contents/MacOS/Electron`）的检测：卸载前会真正退出 App，退出失败会中止而不是继续修改
+- 安装完成后启动 App 时清理 `ELECTRON_RUN_AS_NODE`，避免从 Electron 型 Agent / 终端环境启动失败
+- Gitee Release 脚本不再把 token 放进 curl 进程参数
 
 ### 维护工程
 - 新增 GitHub Actions CI：Python 单元测试、ShellCheck、PowerShell 语法、JavaScript 语法、仓库卫生与版本一致性检查
-- 新增 `tests/test_patch_index.py`：覆盖注入、清理、字节数对齐、幂等性与 asar 头部读取
+- 新增 `tests/test_patch_index.py` 与 `tests/test_theme_static.py`：覆盖注入 / 字节对齐 / 幂等性，以及作者昵称、进程名、热区等静态回归
 - 新增 `.github` Issue / PR 模板与 Release 自动分类规则
 - 新增 [docs/MAINTAINING.md](docs/MAINTAINING.md) 维护手册、[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) 兼容性矩阵
 - 新增 `scripts/maintenance/`：`verify-install.sh` 只读校验注入状态、`sync-remotes.sh` 同步 GitHub / Gitee、`create-gitee-release.sh` 通过 OpenAPI 创建 Gitee 发行版
