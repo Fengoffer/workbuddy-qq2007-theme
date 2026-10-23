@@ -623,7 +623,27 @@ body.qq7-shell .cr-tooltip__content {
 }
 
 body.qq7-shell .cr-tooltip__arrow {
+  border-color: transparent !important;
+}
+
+body.qq7-shell .cr-tooltip--placement-top .cr-tooltip__arrow,
+body.qq7-shell .cr-tooltip[data-placement="top"] .cr-tooltip__arrow {
   border-top-color: #ffffe1 !important;
+}
+
+body.qq7-shell .cr-tooltip--placement-bottom .cr-tooltip__arrow,
+body.qq7-shell .cr-tooltip[data-placement="bottom"] .cr-tooltip__arrow {
+  border-bottom-color: #ffffe1 !important;
+}
+
+body.qq7-shell .cr-tooltip--placement-left .cr-tooltip__arrow,
+body.qq7-shell .cr-tooltip[data-placement="left"] .cr-tooltip__arrow {
+  border-left-color: #ffffe1 !important;
+}
+
+body.qq7-shell .cr-tooltip--placement-right .cr-tooltip__arrow,
+body.qq7-shell .cr-tooltip[data-placement="right"] .cr-tooltip__arrow {
+  border-right-color: #ffffe1 !important;
 }
 
 /* 发送键保持原生圆形，不再叠加方形边框 */
@@ -797,7 +817,7 @@ body.qq7-friend-collapsed #qq7-root .qq7-friend-search { display: none !importan
 #qq7-root .qq7-friend-row-text { flex: 1 1 auto; }
 
 #qq7-root .qq7-friend-summon {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 18px;
@@ -811,6 +831,9 @@ body.qq7-friend-collapsed #qq7-root .qq7-friend-search { display: none !importan
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease;
 }
 
 #qq7-root .qq7-friend-summon:hover {
@@ -824,7 +847,14 @@ body.qq7-friend-collapsed #qq7-root .qq7-friend-search { display: none !importan
 
 #qq7-root .qq7-friend-row:hover .qq7-friend-summon,
 #qq7-root .qq7-friend-row:focus-within .qq7-friend-summon {
-  display: inline-flex;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 触屏没有 hover：召唤按钮常驻 */
+@media (hover: none) {
+  #qq7-root .qq7-friend-summon { opacity: 1; pointer-events: auto; }
+  #qq7-root .qq7-friend-row .qq7-friend-row-dot { display: none; }
 }
 
 #qq7-root .qq7-friend-row:hover .qq7-friend-row-dot,
@@ -971,10 +1001,10 @@ body.qq7-shell .conversation-input-area {
   z-index: auto;
 }
 
-/* 企鹅整体上移到输入框上沿附近，避免遮住输入内容和工具栏 */
+/* 企鹅整体上移到输入框上沿上方；首页 / 会话页均已留出 12px+ 间隙 */
 body.qq7-shell .conversation-input__growth-buddy,
 body.qq7-shell .wb-home-route__growth-buddy {
-  top: -140px !important;
+  top: -145px !important;
   z-index: 3;
   animation-name: qq7-pet-idle-squat;
 }

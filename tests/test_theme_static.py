@@ -53,6 +53,13 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn('data-list="skill"', self.js)
         self.assertIn("summonFriendExpert", self.js)
         self.assertIn("prepareInput", self.js)
+        self.assertIn("window.wb.experts?.list?.()", self.js)
+        self.assertIn("readHomeDraft", self.js)
+        self.assertIn("preserveBlocks", self.js)
+        self.assertIn("friendRefreshSeq", self.js)
+        self.assertIn("opacity: 0", self.css)
+        self.assertIn("pointer-events: none", self.css)
+        self.assertIn("cr-tooltip--placement-bottom", self.css)
 
     def test_friend_panel_dynamic_data_hooks(self) -> None:
         self.assertIn("refreshFriendData", self.js)

@@ -338,7 +338,7 @@
       list.innerHTML = `<div class="qq7-friend-empty">${escapeHtml(emptyText)}</div>`;
       return;
     }
-    list.innerHTML = items.slice(0, 80).map((item) => {
+    list.innerHTML = items.slice(0, 200).map((item) => {
       const avatar = item.avatar
         ? `<img src="${escapeHtml(item.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
         : "";
@@ -354,8 +354,19 @@
     }).join("");
   }
 
-  /* 好友列表：专家 = 最近使用 + 自定义/云同步专家；技能 = 已安装技能 */
+  let friendRefreshSeq = 0;
+
+  function readHomeDraft() {
+    const editor = document.querySelector(".wb-home-route__input [contenteditable='true']");
+    if (!editor) return "";
+    const copy = editor.cloneNode(true);
+    copy.querySelectorAll("[data-slate-placeholder='true']").forEach((node) => node.remove());
+    return (copy.textContent || "").replace(/\ufeff/g, "").trim();
+  }
+
+  /* 好友列表：专家 = 最近使用 + 自定义/云同步 + 完整专家目录；技能 = 已安装技能 */
   async function refreshFriendData() {
+    const seq = ++friendRefreshSeq;
     if (!root || !window.wb) return;
     const experts = new Map();
     const skills = new Map();
@@ -375,6 +386,10 @@
       for (const item of readItems(cloud)) put(experts, normalizeFriendExpert(item, false));
     } catch (error) {}
     try {
+      const catalog = await window.wb.experts?.list?.();
+      for (const item of readItems(catalog)) put(experts, normalizeFriendExpert(item, false));
+    } catch (error) {}
+    try {
       const installed = await window.wb.skills?.installed?.();
       for (const item of readItems(installed)) put(skills, normalizeFriendSkill(item));
     } catch (error) {}
@@ -384,6 +399,7 @@
         for (const item of Array.isArray(cached) ? cached : []) put(skills, normalizeFriendSkill(item));
       } catch (error) {}
     }
+    if (seq !== friendRefreshSeq) return;
     renderFriendGroup("expert", [...experts.values()], "暂无 WorkBuddy 专家");
     renderFriendGroup("skill", [...skills.values()], "暂无已安装的 WorkBuddy 技能");
   }
@@ -423,11 +439,16 @@
         locale: "zh-CN",
         summonedAt: Date.now()
       };
-      await window.wb.conversations.prepareInput({
-        target: { type: "new" },
-        contentBlocks: expert.defaultInitPrompt ? [{ type: "text", text: expert.defaultInitPrompt }] : [],
-        expert: selection
-      });
+      const draft = readHomeDraft();
+      const payload = { target: { type: "new" }, expert: selection };
+      if (draft) {
+        // 保留用户当前草稿，只切换专家
+        payload.contentBlocks = [];
+        payload.preserveBlocks = true;
+      } else {
+        payload.contentBlocks = expert.defaultInitPrompt ? [{ type: "text", text: expert.defaultInitPrompt }] : [];
+      }
+      await window.wb.conversations.prepareInput(payload);
       if (window.wb.navigation?.goto) window.wb.navigation.goto("/");
       window.setTimeout(refreshFriendData, 800);
     } catch (error) {
