@@ -24,6 +24,7 @@ fi
 
 REPO="${GITEE_REPO:-fengoffer/workbuddy-qq2007-theme}"
 TITLE="${GITEE_RELEASE_TITLE:-WorkBuddy QQ 2007 主题 $TAG}"
+TARGET="${GITEE_RELEASE_TARGET:-main}"
 
 TOKEN="${GITEE_TOKEN:-}"
 if [ -z "$TOKEN" ]; then
@@ -47,10 +48,11 @@ HTTP_CODE="$(curl -sS -o "$RESPONSE" -w '%{http_code}' --max-time 60 -X POST \
   --data-urlencode "tag_name=$TAG" \
   --data-urlencode "name=$TITLE" \
   --data-urlencode "body@$NOTES_FILE" \
-  --data-urlencode "prerelease=false")"
+  --data-urlencode "prerelease=false" \
+  --data-urlencode "target_commitish=$TARGET")"
 
 if [ "$HTTP_CODE" != "201" ]; then
-  echo "创建 Gitee 发行版失败（HTTP $HTTP_CODE）："
+  echo "创建 Gitee 发行版失败（HTTP ${HTTP_CODE}）："
   python3 - "$RESPONSE" <<'PY' || cat "$RESPONSE"
 import json
 import sys

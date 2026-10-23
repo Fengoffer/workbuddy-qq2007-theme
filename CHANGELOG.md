@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### 维护工程
+- 修复维护脚本中变量紧邻中文标点时的 unbound variable 问题（`verify-install.sh` / `sync-remotes.sh` / `create-gitee-release.sh`）
+- Gitee 发行版脚本补充 `target_commitish`，兼容 Gitee OpenAPI 校验
+
 ## 1.0.1 (2026-10-23)
 
 ### 修复

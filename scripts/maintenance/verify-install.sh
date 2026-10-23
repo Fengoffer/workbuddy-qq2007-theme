@@ -48,7 +48,7 @@ bad() { echo "❌ $*"; FAIL=$((FAIL + 1)); }
 [ -f "$ASAR" ] || { echo "找不到 $ASAR"; exit 1; }
 
 if [ ! -f "$INDEX" ]; then
-  echo "ℹ️  当前 WorkBuddy 不是 unpacked renderer 结构（找不到 $INDEX），主题不可安装。"
+  echo "ℹ️  当前 WorkBuddy 不是 unpacked renderer 结构（找不到 ${INDEX}），主题不可安装。"
   exit 2
 fi
 
@@ -61,7 +61,7 @@ echo "index.html：$SIZE bytes；asar 记录：$TARGET bytes"
 if [ "$SIZE" -eq "$TARGET" ]; then
   ok "字节数与 asar 记录一致"
 else
-  bad "字节数不一致（$SIZE != $TARGET），存在白屏 / 截断风险"
+  bad "字节数不一致（$SIZE != ${TARGET}），存在白屏 / 截断风险"
 fi
 
 if grep -q '<div id="root"></div>' "$INDEX"; then

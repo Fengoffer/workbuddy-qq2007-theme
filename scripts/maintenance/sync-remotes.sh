@@ -10,7 +10,7 @@ REMOTES=(origin gitee)
 [ -z "$(git status --porcelain)" ] || { echo "工作区不干净，请先提交或清理后再推送。"; exit 1; }
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-[ "$BRANCH" = "main" ] || { echo "当前分支是 $BRANCH，请切回 main 再执行。"; exit 1; }
+[ "$BRANCH" = "main" ] || { echo "当前分支是 ${BRANCH}，请切回 main 再执行。"; exit 1; }
 
 for remote in "${REMOTES[@]}"; do
   git remote get-url "$remote" >/dev/null 2>&1 || { echo "缺少远端：$remote"; exit 1; }
