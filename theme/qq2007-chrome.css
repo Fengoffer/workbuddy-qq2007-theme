@@ -807,6 +807,8 @@ body.qq7-friend-collapsed #qq7-root .qq7-friend-search { display: none !importan
   border-bottom: 1px dotted #c8dbea;
 }
 
+#qq7-root .qq7-friend-row[hidden] { display: none !important; }
+
 #qq7-root .qq7-friend-row:last-child { border-bottom: 0; }
 #qq7-root .qq7-friend-row:hover { background: #e8f4fe; }
 
@@ -843,6 +845,16 @@ body.qq7-friend-collapsed #qq7-root .qq7-friend-search { display: none !importan
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+#qq7-root .qq7-friend-row-badge {
+  margin-left: 4px;
+  padding: 0 3px;
+  border: 1px solid #b7c9d8;
+  background: #eef5fb;
+  color: #5b7590;
+  font-size: 9px;
+  line-height: 14px;
 }
 
 #qq7-root .qq7-friend-row-dot {

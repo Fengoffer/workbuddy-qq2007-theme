@@ -301,19 +301,45 @@
     if (!name) return null;
     const id = item.marketExpertId || item.id || item.sourceId || name;
     const subtitle = pickLocalized(item.profession) || pickLocalized(item.description) || "WorkBuddy 专家";
-    return {
+    const expert = {
       id: `expert:${id}`,
       rawId: id,
       marketExpertId: item.marketExpertId || id,
       source: item.source || "builtin",
       expertType: item.expertType || "",
-      canSummon: item.expertType !== "team",
+      categoryId: item.categoryId || "",
+      canSummon: true,
+      blockedReason: "",
+      blockedLabel: "",
       name,
       subtitle,
       avatar: item.avatarUrl || item.avatar || "",
       kind: "expert",
       online
     };
+    applyExpertGuard(expert);
+    return expert;
+  }
+
+  function applyExpertGuard(expert, raw) {
+    if (!expert) return;
+    if (raw) {
+      expert.expertType = raw.expertType || expert.expertType || "";
+      expert.categoryId = raw.categoryId || expert.categoryId || "";
+    }
+    if (expert.expertType === "team") {
+      expert.canSummon = false;
+      expert.blockedReason = "团队专家请到专家中心召唤";
+      expert.blockedLabel = "团队";
+    } else if (expert.categoryId === "08-FinanceInvestment") {
+      expert.canSummon = false;
+      expert.blockedReason = "金融投资专家请到专家中心确认后召唤";
+      expert.blockedLabel = "金融";
+    } else {
+      expert.canSummon = true;
+      expert.blockedReason = "";
+      expert.blockedLabel = "";
+    }
   }
 
   function normalizeFriendSkill(item) {
@@ -335,6 +361,7 @@
     const list = root && root.querySelector(`.qq7-friend-list[data-list="${key}"]`);
     const count = root && root.querySelector(`.qq7-group-count[data-count="${key}"]`);
     if (!list) return;
+    list.dataset.total = String(items.length);
     if (count) count.textContent = `(${items.length})`;
     const scrollTop = list.scrollTop;
     if (!items.length) {
@@ -343,17 +370,22 @@
       applyFriendFilter();
       return;
     }
-    list.innerHTML = items.slice(0, 200).map((item) => {
+    list.dataset.total = String(items.length);
+    list.innerHTML = items.slice(0, 200).map((item, index) => {
       const avatar = item.avatar
         ? `<img src="${escapeHtml(item.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
         : "";
       const summon = item.kind === "expert" && item.canSummon
         ? `<button class="qq7-friend-summon" type="button" tabindex="-1" data-expert-id="${escapeHtml(item.rawId)}" data-expert-market="${escapeHtml(item.marketExpertId)}" data-expert-source="${escapeHtml(item.source)}" data-expert-name="${escapeHtml(item.name)}" aria-label="召唤${escapeHtml(item.name)}">召唤</button>`
         : "";
-      const search = `${item.name} ${item.subtitle}`;
-      return `<div class="qq7-friend-row" data-kind="${escapeHtml(item.kind)}" data-search="${escapeHtml(search)}" title="${escapeHtml(item.name + " · " + item.subtitle)}">
+      const badge = item.blockedLabel
+        ? `<span class="qq7-friend-row-badge" title="${escapeHtml(item.blockedReason)}">${escapeHtml(item.blockedLabel)}</span>`
+        : "";
+      const search = `${item.name} ${item.subtitle} ${item.blockedReason || ""}`;
+      return `<div class="qq7-friend-row" id="qq7-friend-${escapeHtml(key)}-${index}" role="option" aria-selected="false" data-kind="${escapeHtml(item.kind)}" data-search="${escapeHtml(search)}" title="${escapeHtml(item.name + " · " + item.subtitle + (item.blockedReason ? " · " + item.blockedReason : ""))}">
         <span class="qq7-friend-row-avatar">${avatar}</span>
         <span class="qq7-friend-row-text"><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.subtitle)}</small></span>
+        ${badge}
         ${summon}
         <span class="qq7-friend-row-dot"></span>
       </div>`;
@@ -365,6 +397,21 @@
   let friendRefreshSeq = 0;
   let lastFriendSignature = "";
 
+  function setFriendActive(list, row) {
+    if (!list) return;
+    list.querySelectorAll(".qq7-friend-row").forEach((item) => {
+      item.classList.remove("is-keyboard-active");
+      item.setAttribute("aria-selected", "false");
+    });
+    if (!row) {
+      list.removeAttribute("aria-activedescendant");
+      return;
+    }
+    row.classList.add("is-keyboard-active");
+    row.setAttribute("aria-selected", "true");
+    if (row.id) list.setAttribute("aria-activedescendant", row.id);
+  }
+
   function applyFriendFilter() {
     const input = root && root.querySelector("[data-friend-filter]");
     const query = (input && input.value ? input.value : "").trim().toLowerCase();
@@ -375,12 +422,14 @@
       if (row.hidden) row.classList.remove("is-keyboard-active");
     });
     root.querySelectorAll(".qq7-friend-list").forEach((list) => {
-      if (document.activeElement !== list) return;
-      const rows = [...list.querySelectorAll(".qq7-friend-row")].filter((row) => !row.hidden);
-      if (!rows.length) return;
-      if (!rows.some((row) => row.classList.contains("is-keyboard-active"))) {
-        rows[0].classList.add("is-keyboard-active");
-      }
+      const rows = [...list.querySelectorAll(".qq7-friend-row")];
+      const visible = rows.filter((row) => !row.hidden);
+      const total = Number(list.dataset.total || rows.length);
+      const count = root.querySelector(`.qq7-group-count[data-count="${list.dataset.list}"]`);
+      if (count) count.textContent = query ? `(${visible.length}/${total})` : `(${total})`;
+      if (document.activeElement !== list || !visible.length) return;
+      const current = visible.find((row) => row.classList.contains("is-keyboard-active"));
+      setFriendActive(list, current || visible[0]);
     });
   }
 
@@ -391,7 +440,7 @@
     copy.querySelectorAll("[data-slate-placeholder='true']").forEach((node) => node.remove());
     if ((copy.textContent || "").replace(/\ufeff/g, "").trim()) return true;
     const inputRoot = document.querySelector(".wb-home-route__input");
-    return !!(inputRoot && inputRoot.querySelector('img[src], [class*="attachment"], [class*="file-chip"], [class*="upload-item"]'));
+    return !!(inputRoot && inputRoot.querySelector('img[src], video, audio, [data-slate-void="true"], [class*="attachment"], [class*="file-chip"], [class*="upload-item"], [contenteditable="false"]:not([data-slate-placeholder])'));
   }
 
   /* 好友列表：专家 = 最近使用 + 自定义/云同步 + 完整专家目录；技能 = 已安装技能 */
@@ -417,7 +466,18 @@
     } catch (error) {}
     try {
       const catalog = await window.wb.experts?.list?.();
-      for (const item of readItems(catalog)) put(experts, normalizeFriendExpert(item, false));
+      const catalogById = new Map();
+      for (const item of readItems(catalog)) {
+        const friend = normalizeFriendExpert(item, false);
+        if (!friend) continue;
+        catalogById.set(friend.rawId, item);
+        catalogById.set(friend.marketExpertId, item);
+        put(experts, friend);
+      }
+      for (const friend of experts.values()) {
+        const raw = catalogById.get(friend.rawId) || catalogById.get(friend.marketExpertId);
+        if (raw) applyExpertGuard(friend, raw);
+      }
     } catch (error) {}
     try {
       const installed = await window.wb.skills?.installed?.();
@@ -523,13 +583,13 @@
         <div class="qq7-friend-filter"><input type="search" placeholder="筛选专家 / 技能…" data-friend-filter aria-label="筛选专家或技能"></div>
         <div class="qq7-group" data-group="expert">
           <div class="qq7-group-title"><span class="qq7-caret">▼</span>专家 <span class="qq7-group-count" data-count="expert">(0)</span></div>
-          <div class="qq7-friend-list" data-list="expert" tabindex="0" aria-label="专家列表：上下方向键选择，回车召唤">
+          <div class="qq7-friend-list" data-list="expert" tabindex="0" role="listbox" aria-label="专家列表：上下方向键选择，回车召唤">
             <div class="qq7-friend-empty">正在读取 WorkBuddy 专家…</div>
           </div>
         </div>
         <div class="qq7-group" data-group="skill">
           <div class="qq7-group-title"><span class="qq7-caret">▼</span>技能 <span class="qq7-group-count" data-count="skill">(0)</span></div>
-          <div class="qq7-friend-list" data-list="skill" tabindex="0" aria-label="技能列表">
+          <div class="qq7-friend-list" data-list="skill" tabindex="0" role="listbox" aria-label="技能列表">
             <div class="qq7-friend-empty">正在读取 WorkBuddy 技能…</div>
           </div>
         </div>
@@ -726,14 +786,13 @@
 
     root.querySelector("[data-friend-filter]")?.addEventListener("input", applyFriendFilter);
 
-    root.addEventListener("focusin", (event) => {
+    root.addEventListener("focus", (event) => {
       const list = event.target.closest && event.target.closest(".qq7-friend-list");
       if (!list || event.target !== list) return;
-      const rows = [...list.querySelectorAll(".qq7-friend-row")].filter((row) => row.offsetParent !== null);
+      const rows = [...list.querySelectorAll(".qq7-friend-row")].filter((row) => !row.hidden);
       if (!rows.length) return;
-      rows.forEach((row) => row.classList.remove("is-keyboard-active"));
-      rows[0].classList.add("is-keyboard-active");
-    });
+      setFriendActive(list, rows[0]);
+    }, true);
 
     root.addEventListener("keydown", (event) => {
       const list = event.target.closest && event.target.closest(".qq7-friend-list");
@@ -745,8 +804,7 @@
         event.preventDefault();
         if (active < 0) active = 0;
         else active = Math.max(0, Math.min(rows.length - 1, active + (event.key === "ArrowDown" ? 1 : -1)));
-        rows.forEach((row) => row.classList.remove("is-keyboard-active"));
-        rows[active].classList.add("is-keyboard-active");
+        setFriendActive(list, rows[active]);
         rows[active].scrollIntoView({ block: "nearest" });
       } else if (event.key === "Enter") {
         if (active < 0) active = 0;
