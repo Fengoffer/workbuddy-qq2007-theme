@@ -120,13 +120,25 @@ gh release create vX.Y.Z \
 
 ### 5.5 Gitee Release
 
-Gitee 没有免 token 的 CLI，需网页操作：
+用维护脚本创建（会调用 Gitee OpenAPI `POST /repos/{owner}/{repo}/releases`）：
 
-1. 打开 https://gitee.com/fengoffer/workbuddy-qq2007-theme/releases
-2. 新建发行版 → 选择 tag `vX.Y.Z`；
-3. 粘贴与 GitHub 相同的说明。
+```bash
+bash scripts/maintenance/create-gitee-release.sh vX.Y.Z /tmp/release-notes.md
+```
 
-Gitee 会同步代码和 tag，但 Release 说明需要手动维护。
+- token 优先读环境变量 `GITEE_TOKEN`，否则从 macOS Keychain 中 `gitee.com` 的 git 凭据读取（即 HTTPS push 用的私人令牌），**不会写进仓库**；
+- `release-notes.md` 与 GitHub Release 用同一份说明；
+- 创建成功会打印 release id；失败会打印 HTTP 状态和 Gitee 返回的错误信息。
+
+如果脚本报「没有找到 Gitee token」，可以到 Gitee → 设置 → 私人令牌生成一个（需要 `projects` 权限），然后执行：
+
+```bash
+GITEE_TOKEN=你的令牌 bash scripts/maintenance/create-gitee-release.sh vX.Y.Z /tmp/release-notes.md
+```
+
+也可以在网页手动创建：仓库 → 发行版 → 新建发行版，选择对应 tag 后粘贴同一份说明。
+
+Gitee 会同步代码和 tag，但 Release 说明不会随 git push 自动出现，发布时不要漏掉这一步。
 
 ### 5.6 发布后
 

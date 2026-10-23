@@ -7,7 +7,7 @@
 - 新增 `tests/test_patch_index.py`：覆盖注入、清理、字节数对齐、幂等性与 asar 头部读取
 - 新增 `.github` Issue / PR 模板与 Release 自动分类规则
 - 新增 [docs/MAINTAINING.md](docs/MAINTAINING.md) 维护手册、[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) 兼容性矩阵
-- 新增 `scripts/maintenance/`：`verify-install.sh` 只读校验注入状态、`sync-remotes.sh` 同步 GitHub / Gitee
+- 新增 `scripts/maintenance/`：`verify-install.sh` 只读校验注入状态、`sync-remotes.sh` 同步 GitHub / Gitee、`create-gitee-release.sh` 通过 OpenAPI 创建 Gitee 发行版
 - 新增 `.editorconfig` 与 `.gitattributes`，统一编码与换行符
 - README 增加 CI 徽章与维护 / 兼容性入口
 
