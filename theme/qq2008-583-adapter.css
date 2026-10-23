@@ -1,0 +1,114 @@
+/* ============================================================================
+   WorkBuddy 5.8.3 适配层  (QQ 2008 皮肤补全)
+   ----------------------------------------------------------------------------
+   背景：原皮肤验证版本为 WorkBuddy 5.3.3。5.8.3 重写了会话页/输入框的 DOM
+   （conversation-shell / cr-input-* / cr-message-*），旧选择器（claw-agent-chat-pane、
+   wb-input-footer、input-area-container 等）已不存在，导致会话页"只换了一半皮"。
+   本文件把原皮肤的设计语言映射到 5.8.3 的新类名上，不修改 app.asar。
+   ============================================================================ */
+
+/* --- 1. 主内容背景：5.8.3 用 _gridViewItem + .teams-main-content 盖住了主题渐变 --- */
+#root .teams-container [data-view-id="main-content"],
+#root .teams-container [data-view-id="detail-panel"],
+#root .teams-container [data-view-id="sources-panel"] {
+  background-color: #f6fbfe !important;
+  background-image: linear-gradient(135deg, #e6f4fc 0%, #fbfdff 46%, #eef8fd 100%) !important;
+}
+
+/* 中间层一律透明，让上面的主题渐变透出来 */
+#root .teams-content-wrapper,
+#root .teams-main-content,
+#root .wb-home-route,
+.wb-home-route__body,
+.wb-home-route__input-wrap,
+#root .conversation-page-chrome,
+#root .conversation-page-chrome__content,
+#root .conversation-page-chrome__shell,
+#root .conversation-shell,
+#root .conversation-shell__main,
+#root .conversation-input-area,
+#root .conversation-input,
+#root .conversation-input-area__input-stack,
+.cr-theme,
+.cr-input-box,
+.cr-input-box__main,
+.cr-input-editor-host,
+.cr-message-list,
+.cr-message-list-viewport,
+.cr-message-list__content,
+.cr-document,
+.cr-document__virtual-flow {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* --- 2. 输入框：统一换成 QQ 2008 立体白框（会话页 + 首页共用 .cr-input-container） --- */
+.cr-input-container {
+  border: 1px solid #8fb9d4 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(43, 94, 129, .12), inset 0 1px rgba(255, 255, 255, .9) !important;
+}
+
+.cr-input-toolbar {
+  border-top: 1px solid #e0ebf2 !important;
+  background: #f7fbfe !important;
+  border-radius: 0 0 11px 11px !important;
+}
+
+/* 首页外层 slot 在 5.8.3 只是容器，避免和内部输入框形成双边框 */
+.wb-home-composer__input-slot {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 2px !important;
+}
+
+/* 输入文字 */
+.conversation-input [contenteditable="true"],
+.wb-home-route__input [contenteditable="true"] {
+  color: #263d50 !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+}
+
+/* 底部说明文字不再单独铺白条 */
+.conversation-input-area__disclaimer,
+.wb-homepage-disclaimer {
+  background: transparent !important;
+}
+
+/* --- 3. 把新版的“成长小助手”换成 QQ 企鹅 --- */
+[class*="growth-buddy"] {
+  background: url("./qq-penguin-user.png") right bottom / 104px auto no-repeat !important;
+}
+
+[class*="growth-buddy"] img,
+[class*="growth-buddy"] video,
+[class*="growth-buddy"] canvas {
+  visibility: hidden !important;
+}
+
+/* --- 4. 会话消息：按皮肤色板做轻量 QQ 化 --- */
+.cr-self-bubble {
+  border: 1px solid #9ec8e0 !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, #eaf6fe 0%, #d3eaf8 100%) !important;
+  color: #263d50 !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .85) !important;
+}
+
+.cr-agent__content,
+.cr-markdown {
+  color: #263d50 !important;
+}
+
+.cr-agent__name {
+  color: #173f5d !important;
+  font-weight: 500 !important;
+}
+
+.cr-message-list__bottom-mask {
+  background: linear-gradient(180deg, rgba(246, 251, 254, 0), #f6fbfe) !important;
+}
