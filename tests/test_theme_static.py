@@ -43,6 +43,12 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("readServiceAccount", self.js)
         self.assertIn("isLoggedIn", self.js)
 
+    def test_friend_panel_dynamic_data_hooks(self) -> None:
+        self.assertIn("refreshFriendData", self.js)
+        self.assertIn("qq7-friend-list", self.js)
+        self.assertIn("qq7-friend-list", self.css)
+        self.assertIn("448px 32px", self.css)
+
     def test_friend_panel_collapse_selector_scoped(self) -> None:
         self.assertRegex(
             self.css,

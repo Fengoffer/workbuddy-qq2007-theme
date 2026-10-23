@@ -112,8 +112,10 @@ body.qq7-shell [data-view-id="sources-panel"] { width: 0 !important; }
 }
 
 #qq7-root .qq7-title-ico {
-  width: 20px; height: 20px;
-  background: url("./qq7-icons.png") 0 0 / 280px 20px no-repeat;
+  width: 32px; height: 32px;
+  flex: 0 0 32px;
+  background: url("./qq7-icons.png") 0 0 / 448px 32px no-repeat;
+  image-rendering: pixelated;
   filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .35));
 }
 
@@ -707,6 +709,74 @@ body.qq7-friend-collapsed #qq7-root .qq7-friend-search { display: none !importan
 #qq7-root .qq7-qqshow { flex: 1 1 auto; min-height: 120px; }
 #qq7-root .qq7-qqshow-img { min-height: 0; }
 #qq7-root .qq7-friend-search { margin-top: auto; }
+
+#qq7-root .qq7-friend-list {
+  max-height: 164px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 0;
+}
+
+#qq7-root .qq7-friend-list[data-list="offline"] { max-height: 240px; }
+
+#qq7-root .qq7-friend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-bottom: 1px dotted #c8dbea;
+}
+
+#qq7-root .qq7-friend-row:last-child { border-bottom: 0; }
+#qq7-root .qq7-friend-row:hover { background: #e8f4fe; }
+
+#qq7-root .qq7-friend-row-avatar {
+  width: 22px; height: 22px; flex: 0 0 22px;
+  border: 1px solid #9fbfd8;
+  background: linear-gradient(135deg, #dceefc, #eef8ff);
+  overflow: hidden;
+}
+
+#qq7-root .qq7-friend-row-avatar img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+
+#qq7-root .qq7-friend-row-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+#qq7-root .qq7-friend-row-text b {
+  font-size: 11px;
+  font-weight: 700;
+  color: #17436b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#qq7-root .qq7-friend-row-text small {
+  font-size: 10px;
+  color: #7a94aa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#qq7-root .qq7-friend-row-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-left: auto;
+  background: #9fb3c4;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .7);
+}
+
+#qq7-root .qq7-friend-row.is-online .qq7-friend-row-dot { background: #2f8f3a; }
+#qq7-root .qq7-friend-row[data-kind="skill"] .qq7-friend-row-dot { background: #3d8bd6; }
+#qq7-root .qq7-friend-empty { padding: 6px; color: #7a94aa; font-size: 10px; text-align: center; }
+#qq7-root .qq7-group-count { color: #7a94aa; font-weight: 400; }
 
 body.qq7-shell .wb-home-composer__chips .quick-actions__item,
 body.qq7-shell .wb-home-prompt-list__row,

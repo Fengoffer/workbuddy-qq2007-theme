@@ -298,6 +298,14 @@ env -u ELECTRON_RUN_AS_NODE open -a /Applications/WorkBuddy.app
 </details>
 
 <details>
+<summary><b>右侧好友列表里的专家 / 技能是怎么来的？</b></summary>
+
+在线列表来自 WorkBuddy 的「最近使用」专家；离线列表是已安装技能和自定义 / 云同步专家。好友列表每 30 秒刷新一次，启动后前几秒会补刷新等待 App 服务就绪。
+
+WorkBuddy 目前没有暴露精确的「今天使用」时间戳，所以在线列表暂按「最近使用」计算；如果后续需要严格按自然日划分，可以增加本地使用时间记录。
+</details>
+
+<details>
 <summary><b>Windows 支持吗？</b></summary>
 
 提供实验性脚本，但仅在 WorkBuddy 具有 unpacked renderer 结构时可用；作者没有 Windows 实机，欢迎测试反馈。

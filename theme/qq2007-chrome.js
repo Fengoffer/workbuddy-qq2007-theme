@@ -281,6 +281,119 @@
     }
   }
 
+  function pickLocalized(value) {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object") {
+      return value.zh || value.en || Object.values(value).find((entry) => typeof entry === "string") || "";
+    }
+    return "";
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, (char) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]
+    ));
+  }
+
+  function normalizeFriendExpert(item, online) {
+    if (!item) return null;
+    const name = pickLocalized(item.displayName) || pickLocalized(item.name) || item.profession || "";
+    if (!name) return null;
+    const id = item.marketExpertId || item.id || item.sourceId || name;
+    const subtitle = pickLocalized(item.profession) || pickLocalized(item.description) || "WorkBuddy 专家";
+    return {
+      id: `expert:${id}`,
+      name,
+      subtitle,
+      avatar: item.avatarUrl || item.avatar || "",
+      kind: "expert",
+      online
+    };
+  }
+
+  function normalizeFriendSkill(item) {
+    if (!item) return null;
+    const name = pickLocalized(item.displayName) || item.name || "";
+    if (!name) return null;
+    const id = item.id || item.slug || item.canonicalName || name;
+    const subtitle = pickLocalized(item.description_zh) || pickLocalized(item.description) || "已安装技能";
+    return {
+      id: `skill:${id}`,
+      name,
+      subtitle,
+      avatar: item.iconUrl || "",
+      kind: "skill",
+      online: false
+    };
+  }
+
+  function renderFriendGroup(key, items, emptyText) {
+    const list = root && root.querySelector(`.qq7-friend-list[data-list="${key}"]`);
+    const count = root && root.querySelector(`.qq7-group-count[data-count="${key}"]`);
+    if (!list) return;
+    if (count) count.textContent = `(${items.length})`;
+    if (!items.length) {
+      list.innerHTML = `<div class="qq7-friend-empty">${escapeHtml(emptyText)}</div>`;
+      return;
+    }
+    list.innerHTML = items.slice(0, 80).map((item) => {
+      const avatar = item.avatar
+        ? `<img src="${escapeHtml(item.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+        : "";
+      return `<div class="qq7-friend-row ${item.online ? "is-online" : "is-offline"}" data-kind="${escapeHtml(item.kind)}" title="${escapeHtml(item.name + " · " + item.subtitle)}">
+        <span class="qq7-friend-row-avatar">${avatar}</span>
+        <span class="qq7-friend-row-text"><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.subtitle)}</small></span>
+        <span class="qq7-friend-row-dot"></span>
+      </div>`;
+    }).join("");
+  }
+
+  /* 好友列表：在线=最近使用过的专家；离线=已安装技能 + 自定义/云同步专家 */
+  async function refreshFriendData() {
+    if (!root || !window.wb) return;
+    const online = new Map();
+    const offline = new Map();
+    const put = (map, item) => {
+      if (item && !map.has(item.id)) map.set(item.id, item);
+    };
+    const readItems = (result) => (Array.isArray(result) ? result : result && Array.isArray(result.items) ? result.items : []);
+
+    try {
+      const recents = await window.wb.experts?.recents?.list?.();
+      for (const item of readItems(recents)) put(online, normalizeFriendExpert(item, true));
+    } catch (error) {}
+    try {
+      const custom = await window.wb.experts?.custom?.list?.();
+      for (const item of readItems(custom)) {
+        const friend = normalizeFriendExpert(item, false);
+        if (friend && !online.has(friend.id)) put(offline, friend);
+      }
+      const cloud = await window.wb.experts?.cloudSync?.list?.({ includeHash: false });
+      for (const item of readItems(cloud)) {
+        const friend = normalizeFriendExpert(item, false);
+        if (friend && !online.has(friend.id)) put(offline, friend);
+      }
+    } catch (error) {}
+    try {
+      const installed = await window.wb.skills?.installed?.();
+      for (const item of readItems(installed)) {
+        const friend = normalizeFriendSkill(item);
+        if (friend && !online.has(friend.id)) put(offline, friend);
+      }
+    } catch (error) {}
+    if (!offline.size) {
+      try {
+        const cached = JSON.parse(localStorage.getItem("skills-cache-installed") || "[]");
+        for (const item of Array.isArray(cached) ? cached : []) {
+          const friend = normalizeFriendSkill(item);
+          if (friend && !online.has(friend.id)) put(offline, friend);
+        }
+      } catch (error) {}
+    }
+    renderFriendGroup("online", [...online.values()], "今天还没有使用专家或技能");
+    renderFriendGroup("offline", [...offline.values()], "暂无已安装的专家或技能");
+  }
+
   function friendPanelHtml() {
     const name = displayName();
     return `
@@ -301,18 +414,17 @@
         <div class="qq7-friend-tools">
           ${TOOLS.map((t) => `<div class="qq7-friend-tool" data-action="${t.action}" title="${t.label}">${icon(t.icon)}<span>${t.label}</span></div>`).join("")}
         </div>
-        <div class="qq7-group">
-          <div class="qq7-group-title"><span class="qq7-caret">▼</span>我的好友 (1/1)</div>
-          <div class="qq7-buddy" title="打开最近会话">
-            <span class="qq7-buddy-avatar"></span>
-            <span class="qq7-buddy-text">
-              <span class="qq7-buddy-name qq7-account-name">${name}</span>
-              <span class="qq7-buddy-sign">● 在线 · 正在使用 WorkBuddy</span>
-            </span>
+        <div class="qq7-group" data-group="online">
+          <div class="qq7-group-title"><span class="qq7-caret">▼</span>在线好友 <span class="qq7-group-count" data-count="online">(0)</span></div>
+          <div class="qq7-friend-list" data-list="online">
+            <div class="qq7-friend-empty">正在读取 WorkBuddy 专家…</div>
           </div>
         </div>
-        <div class="qq7-group">
-          <div class="qq7-group-title"><span class="qq7-caret">▶</span>离线好友 (0/0)</div>
+        <div class="qq7-group" data-group="offline">
+          <div class="qq7-group-title"><span class="qq7-caret">▼</span>离线好友 <span class="qq7-group-count" data-count="offline">(0)</span></div>
+          <div class="qq7-friend-list" data-list="offline">
+            <div class="qq7-friend-empty">正在读取 WorkBuddy 技能…</div>
+          </div>
         </div>
         <div class="qq7-qqshow">
           <div class="qq7-qqshow-title">QQ 秀 <small>主题可替换</small></div>
@@ -494,6 +606,7 @@
         root.querySelectorAll(".qq7-friend-body").forEach((body) => {
           body.hidden = body.dataset.body !== state.tab;
         });
+        if (state.tab === "friends") refreshFriendData();
       });
     });
     const collapse = root.querySelector(".qq7-friend-collapse");
@@ -530,6 +643,10 @@
     beginDragTracking();
     setupWindowChrome();
     watchAccountName();
+    refreshFriendData();
+    // App 的专家 / 技能服务可能比主题注入晚就绪，前几秒补几次刷新
+    for (const delay of [1500, 4000, 8000]) window.setTimeout(refreshFriendData, delay);
+    window.setInterval(refreshFriendData, 30000);
   }
 
   let dragActive = false;
