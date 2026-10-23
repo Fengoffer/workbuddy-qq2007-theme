@@ -435,6 +435,9 @@
   }
 
   function buildChrome() {
+    try {
+      state.collapsed = localStorage.getItem("qq7-friend-collapsed") === "1";
+    } catch (error) {}
     root = document.createElement("div");
     root.id = "qq7-root";
     root.innerHTML = `
@@ -447,7 +450,7 @@
       <div class="qq7-menubar">
         ${MENU.map((m) => `<span class="qq7-menu-item" data-action="${m.action}">${icon(m.icon)}<span>${m.label}</span></span>`).join("")}
       </div>
-      <div class="qq7-friend">${friendPanelHtml()}</div>
+      <div class="qq7-friend" id="qq7-friend-panel">${friendPanelHtml()}</div>
       <div class="qq7-statusbar">
         <span class="qq7-status-left">
           ${icon(12)}
@@ -505,9 +508,13 @@
       const toggleCollapse = () => {
         state.collapsed = !state.collapsed;
         syncCollapseButton();
+        try {
+          localStorage.setItem("qq7-friend-collapsed", state.collapsed ? "1" : "0");
+        } catch (error) {}
       };
       collapse.setAttribute("role", "button");
       collapse.setAttribute("tabindex", "0");
+      collapse.setAttribute("aria-controls", "qq7-friend-panel");
       syncCollapseButton();
       collapse.addEventListener("click", toggleCollapse);
       collapse.addEventListener("keydown", (event) => {

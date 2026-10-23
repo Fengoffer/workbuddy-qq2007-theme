@@ -52,8 +52,12 @@ class ThemeStaticTests(unittest.TestCase):
     def test_friend_collapse_keyboard_and_labels(self) -> None:
         self.assertIn('setAttribute("role", "button")', self.js)
         self.assertIn('setAttribute("tabindex", "0")', self.js)
+        self.assertIn('setAttribute("aria-controls", "qq7-friend-panel")', self.js)
         self.assertIn('"aria-expanded"', self.js)
         self.assertIn('"展开好友面板"', self.js)
+        self.assertIn("#qq7-root .qq7-friend-collapse:focus-visible", self.css)
+        self.assertIn('localStorage.getItem("qq7-friend-collapsed")', self.js)
+        self.assertIn('localStorage.setItem("qq7-friend-collapsed"', self.js)
 
     def test_macos_titlebar_zone_exists(self) -> None:
         self.assertIn("qq7-titlebar-jszone", self.js)

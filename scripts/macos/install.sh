@@ -86,7 +86,7 @@ cat > "$BK/metadata.json" <<EOF
   "indexTargetSize": $TARGET,
   "asarSha256": "$(shasum -a 256 "$ASAR" | awk '{print $1}')",
   "indexSha256": "$(shasum -a 256 "$INDEX" | awk '{print $1}')",
-  "themeVersion": "1.0.7"
+  "themeVersion": "1.0.8"
 }
 EOF
 shasum -a 256 "$ASAR" "$INDEX" > "$BK/SHA256.txt"

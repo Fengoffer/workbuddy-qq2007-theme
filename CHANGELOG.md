@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.8 (2026-10-23)
+
+### 修复
+- 好友面板折叠箭头补充 `aria-controls` 与 `:focus-visible` 焦点样式
+- 折叠状态持久化到 `localStorage`，重启 / 刷新后保持上次收起 / 展开状态
+
+### 维护工程
+- MAINTAINING 记录 CHANGELOG 版本标题格式要求
+- 静态测试补充 `aria-controls`、焦点样式与持久化断言
+
 ## 1.0.7 (2026-10-23)
 
 ### 修复

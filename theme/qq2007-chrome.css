@@ -287,6 +287,11 @@ body.qq7-js-window-chrome #qq7-root .qq7-menubar {
 
 #qq7-root .qq7-friend-collapse { margin-left: auto; width: 18px; height: 16px; display: grid; place-items: center; border: 1px solid var(--qq7-line); background: linear-gradient(180deg, #fff, #dfeefb); cursor: pointer; font-size: 10px; }
 
+#qq7-root .qq7-friend-collapse:focus-visible {
+  outline: 2px solid #0a4fc0;
+  outline-offset: 1px;
+}
+
 #qq7-root .qq7-friend-card {
   margin: 6px;
   padding: 6px;

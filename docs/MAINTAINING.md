@@ -94,6 +94,7 @@ bash scripts/maintenance/verify-install.sh
 - [ ] 卸载后用新版本重装一次，WorkBuddy 能正常启动；
 - [ ] 标题栏、菜单栏、好友面板、聊天气泡、签名、通知音、宠物、次级窗口全部正常；
 - [ ] 备份目录中 `metadata.json` 的 `themeVersion` 是新版本号；
+- [ ] `CHANGELOG.md` 版本标题严格为 `## X.Y.Z (YYYY-MM-DD)`（CI 会校验，避免日期重复等笔误）；
 - [ ] 截图 / GIF 已更新（如涉及界面变化）。
 
 ### 5.3 打 tag 并推送双仓库
