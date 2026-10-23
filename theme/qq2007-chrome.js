@@ -81,10 +81,11 @@
   function accountMenuShowsLoggedOut() {
     const triggers = [...document.querySelectorAll(".user-menu-trigger")];
     if (!triggers.length) return false;
-    // 任意一个登录态 trigger 都说明已登录，防止隐藏的旧登录按钮导致误判
-    if (triggers.some((t) => String(t.className || "").includes("user-menu-trigger--workbuddy"))) return false;
-    const trigger = triggers.find((t) => t.getClientRects().length > 0) || triggers[0];
-    return !trigger.querySelector(".user-menu-trigger-name") && !(trigger.textContent || "").trim();
+    // 优先看可见 trigger：可见节点里有登录态才算登录，避免隐藏的旧登录态掩盖真实登出
+    const visible = triggers.filter((t) => t.getClientRects().length > 0);
+    const scope = visible.length ? visible : triggers;
+    if (scope.some((t) => String(t.className || "").includes("user-menu-trigger--workbuddy"))) return false;
+    return scope.some((t) => !t.querySelector(".user-menu-trigger-name") && !(t.textContent || "").trim());
   }
 
   function displayName() {

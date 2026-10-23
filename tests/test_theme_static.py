@@ -63,6 +63,7 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("user-menu-trigger--workbuddy", self.js)
         self.assertIn('querySelectorAll(".user-menu-trigger")', self.js)
         self.assertIn("getClientRects", self.js)
+        self.assertIn("const visible = triggers.filter", self.js)
 
     def test_shell_variables_not_followed_by_multibyte(self) -> None:
         bad = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7f])")
