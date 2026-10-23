@@ -89,7 +89,7 @@ Test-Path "$env:LOCALAPPDATA\Programs\WorkBuddy\resources\app.asar.unpacked\rend
 | 仅主窗口应用皮肤 | 次级窗口保持原生 | 设计如此，避免遮挡原生功能 |
 | macOS 原生标题栏高度按 38px 适配 | 不同系统版本可能偏移热区分界 | 调整 CSS 变量 `--qq7-native-titlebar` |
 | 账号名优先读 WorkBuddy 账号服务（`__genieAccountService`），回退用户菜单 DOM | 未来版本改内部服务或菜单结构时可能先显示「WorkBuddy 用户」 | 更新 `readServiceAccount` / `ACCOUNT_NAME_SELECTORS` |
-| 右侧好友列表「在线」按 WorkBuddy 最近使用专家计算 | App 未暴露精确 `lastUsedAt`，无法严格按自然日划分 | 后续可增加本地使用时间记录 |
+| 右侧「专家」组优先显示最近使用 / 自定义 / 云同步专家 | 未展开 WorkBuddy 内置专家目录的全部条目 | 后续可接入完整目录快照 |
 
 ## 6. 反馈模板
 

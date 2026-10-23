@@ -303,6 +303,9 @@
     const subtitle = pickLocalized(item.profession) || pickLocalized(item.description) || "WorkBuddy 专家";
     return {
       id: `expert:${id}`,
+      rawId: id,
+      marketExpertId: item.marketExpertId || id,
+      source: item.source || "builtin",
       name,
       subtitle,
       avatar: item.avatarUrl || item.avatar || "",
@@ -322,8 +325,7 @@
       name,
       subtitle,
       avatar: item.iconUrl || "",
-      kind: "skill",
-      online: false
+      kind: "skill"
     };
   }
 
@@ -340,19 +342,23 @@
       const avatar = item.avatar
         ? `<img src="${escapeHtml(item.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
         : "";
-      return `<div class="qq7-friend-row ${item.online ? "is-online" : "is-offline"}" data-kind="${escapeHtml(item.kind)}" title="${escapeHtml(item.name + " · " + item.subtitle)}">
+      const summon = item.kind === "expert"
+        ? `<button class="qq7-friend-summon" type="button" data-expert-id="${escapeHtml(item.rawId)}" data-expert-market="${escapeHtml(item.marketExpertId)}" data-expert-source="${escapeHtml(item.source)}" data-expert-name="${escapeHtml(item.name)}" aria-label="召唤${escapeHtml(item.name)}">召唤</button>`
+        : "";
+      return `<div class="qq7-friend-row" data-kind="${escapeHtml(item.kind)}" title="${escapeHtml(item.name + " · " + item.subtitle)}">
         <span class="qq7-friend-row-avatar">${avatar}</span>
         <span class="qq7-friend-row-text"><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.subtitle)}</small></span>
+        ${summon}
         <span class="qq7-friend-row-dot"></span>
       </div>`;
     }).join("");
   }
 
-  /* 好友列表：在线=最近使用过的专家；离线=已安装技能 + 自定义/云同步专家 */
+  /* 好友列表：专家 = 最近使用 + 自定义/云同步专家；技能 = 已安装技能 */
   async function refreshFriendData() {
     if (!root || !window.wb) return;
-    const online = new Map();
-    const offline = new Map();
+    const experts = new Map();
+    const skills = new Map();
     const put = (map, item) => {
       if (item && !map.has(item.id)) map.set(item.id, item);
     };
@@ -360,38 +366,78 @@
 
     try {
       const recents = await window.wb.experts?.recents?.list?.();
-      for (const item of readItems(recents)) put(online, normalizeFriendExpert(item, true));
+      for (const item of readItems(recents)) put(experts, normalizeFriendExpert(item, true));
     } catch (error) {}
     try {
       const custom = await window.wb.experts?.custom?.list?.();
-      for (const item of readItems(custom)) {
-        const friend = normalizeFriendExpert(item, false);
-        if (friend && !online.has(friend.id)) put(offline, friend);
-      }
+      for (const item of readItems(custom)) put(experts, normalizeFriendExpert(item, false));
       const cloud = await window.wb.experts?.cloudSync?.list?.({ includeHash: false });
-      for (const item of readItems(cloud)) {
-        const friend = normalizeFriendExpert(item, false);
-        if (friend && !online.has(friend.id)) put(offline, friend);
-      }
+      for (const item of readItems(cloud)) put(experts, normalizeFriendExpert(item, false));
     } catch (error) {}
     try {
       const installed = await window.wb.skills?.installed?.();
-      for (const item of readItems(installed)) {
-        const friend = normalizeFriendSkill(item);
-        if (friend && !online.has(friend.id)) put(offline, friend);
-      }
+      for (const item of readItems(installed)) put(skills, normalizeFriendSkill(item));
     } catch (error) {}
-    if (!offline.size) {
+    if (!skills.size) {
       try {
         const cached = JSON.parse(localStorage.getItem("skills-cache-installed") || "[]");
-        for (const item of Array.isArray(cached) ? cached : []) {
-          const friend = normalizeFriendSkill(item);
-          if (friend && !online.has(friend.id)) put(offline, friend);
-        }
+        for (const item of Array.isArray(cached) ? cached : []) put(skills, normalizeFriendSkill(item));
       } catch (error) {}
     }
-    renderFriendGroup("online", [...online.values()], "今天还没有使用专家或技能");
-    renderFriendGroup("offline", [...offline.values()], "暂无已安装的专家或技能");
+    renderFriendGroup("expert", [...experts.values()], "暂无 WorkBuddy 专家");
+    renderFriendGroup("skill", [...skills.values()], "暂无已安装的 WorkBuddy 技能");
+  }
+
+  async function summonFriendExpert(button) {
+    if (!window.wb?.experts || !window.wb?.conversations) return;
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "召唤中…";
+    try {
+      const expertId = button.dataset.expertId;
+      const marketExpertId = button.dataset.expertMarket || expertId;
+      const source = button.dataset.expertSource || "builtin";
+      const result = await window.wb.experts.summon({
+        expertId,
+        marketExpertId,
+        source,
+        locale: "zh-CN"
+      });
+      const expert = result && result.expert;
+      if (!expert) throw new Error("expert unavailable");
+      const selection = {
+        id: expert.id,
+        name: expert.name,
+        profession: expert.profession,
+        avatarUrl: expert.avatarUrl,
+        prompt: expert.prompt || "",
+        defaultInitPrompt: expert.defaultInitPrompt || "",
+        pluginName: expert.pluginName,
+        marketExpertId: expert.marketExpertId,
+        updatedAt: expert.updatedAt,
+        version: expert.version,
+        expertType: expert.expertType,
+        agentName: expert.agentName,
+        localPath: expert.localPath,
+        marketplace: expert.marketplace,
+        locale: "zh-CN",
+        summonedAt: Date.now()
+      };
+      await window.wb.conversations.prepareInput({
+        target: { type: "new" },
+        contentBlocks: expert.defaultInitPrompt ? [{ type: "text", text: expert.defaultInitPrompt }] : [],
+        expert: selection
+      });
+      if (window.wb.navigation?.goto) window.wb.navigation.goto("/");
+      window.setTimeout(refreshFriendData, 800);
+    } catch (error) {
+      console.warn("[QQ7] summon expert failed", error);
+      button.textContent = "召唤失败";
+      window.setTimeout(() => {
+        button.disabled = false;
+        button.textContent = original;
+      }, 1200);
+    }
   }
 
   function friendPanelHtml() {
@@ -414,15 +460,15 @@
         <div class="qq7-friend-tools">
           ${TOOLS.map((t) => `<div class="qq7-friend-tool" data-action="${t.action}" title="${t.label}">${icon(t.icon)}<span>${t.label}</span></div>`).join("")}
         </div>
-        <div class="qq7-group" data-group="online">
-          <div class="qq7-group-title"><span class="qq7-caret">▼</span>在线好友 <span class="qq7-group-count" data-count="online">(0)</span></div>
-          <div class="qq7-friend-list" data-list="online">
+        <div class="qq7-group" data-group="expert">
+          <div class="qq7-group-title"><span class="qq7-caret">▼</span>专家 <span class="qq7-group-count" data-count="expert">(0)</span></div>
+          <div class="qq7-friend-list" data-list="expert">
             <div class="qq7-friend-empty">正在读取 WorkBuddy 专家…</div>
           </div>
         </div>
-        <div class="qq7-group" data-group="offline">
-          <div class="qq7-group-title"><span class="qq7-caret">▼</span>离线好友 <span class="qq7-group-count" data-count="offline">(0)</span></div>
-          <div class="qq7-friend-list" data-list="offline">
+        <div class="qq7-group" data-group="skill">
+          <div class="qq7-group-title"><span class="qq7-caret">▼</span>技能 <span class="qq7-group-count" data-count="skill">(0)</span></div>
+          <div class="qq7-friend-list" data-list="skill">
             <div class="qq7-friend-empty">正在读取 WorkBuddy 技能…</div>
           </div>
         </div>
@@ -609,6 +655,14 @@
         if (state.tab === "friends") refreshFriendData();
       });
     });
+    root.addEventListener("click", (event) => {
+      const button = event.target.closest && event.target.closest(".qq7-friend-summon");
+      if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
+      summonFriendExpert(button);
+    });
+
     const collapse = root.querySelector(".qq7-friend-collapse");
     if (collapse) {
       const syncCollapseButton = () => {

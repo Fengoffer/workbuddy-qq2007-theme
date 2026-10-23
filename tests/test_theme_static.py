@@ -43,6 +43,12 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("readServiceAccount", self.js)
         self.assertIn("isLoggedIn", self.js)
 
+    def test_friend_panel_categories_and_summon(self) -> None:
+        self.assertIn('data-list="expert"', self.js)
+        self.assertIn('data-list="skill"', self.js)
+        self.assertIn("summonFriendExpert", self.js)
+        self.assertIn("prepareInput", self.js)
+
     def test_friend_panel_dynamic_data_hooks(self) -> None:
         self.assertIn("refreshFriendData", self.js)
         self.assertIn("qq7-friend-list", self.js)

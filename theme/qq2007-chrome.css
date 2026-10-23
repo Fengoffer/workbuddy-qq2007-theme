@@ -593,6 +593,8 @@ body.qq7-shell .cr-input-toolbar {
   border-top: 1px solid #c3d8e8 !important;
   background: linear-gradient(180deg, #fbfeff, #eaf5ff) !important;
   border-radius: 0 !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
 }
 
 body.qq7-shell .cr-input-footer-item,
@@ -773,8 +775,46 @@ body.qq7-friend-collapsed #qq7-root .qq7-friend-search { display: none !importan
   box-shadow: inset 0 1px rgba(255, 255, 255, .7);
 }
 
-#qq7-root .qq7-friend-row.is-online .qq7-friend-row-dot { background: #2f8f3a; }
+#qq7-root .qq7-friend-row[data-kind="expert"] .qq7-friend-row-dot { background: #2f8f3a; }
 #qq7-root .qq7-friend-row[data-kind="skill"] .qq7-friend-row-dot { background: #3d8bd6; }
+
+#qq7-root .qq7-friend-row-text { flex: 1 1 auto; }
+
+#qq7-root .qq7-friend-summon {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 4px;
+  border: 1px solid #7f9db9;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #fff, #dceefc);
+  color: #17436b;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#qq7-root .qq7-friend-summon:hover {
+  background: linear-gradient(180deg, #fff, #cfe6fb);
+}
+
+#qq7-root .qq7-friend-summon:focus-visible {
+  outline: 2px solid #0a4fc0;
+  outline-offset: 1px;
+}
+
+#qq7-root .qq7-friend-row:hover .qq7-friend-summon,
+#qq7-root .qq7-friend-row:focus-within .qq7-friend-summon {
+  display: inline-flex;
+}
+
+#qq7-root .qq7-friend-row:hover .qq7-friend-row-dot,
+#qq7-root .qq7-friend-row:focus-within .qq7-friend-row-dot {
+  display: none;
+}
 #qq7-root .qq7-friend-empty { padding: 6px; color: #7a94aa; font-size: 10px; text-align: center; }
 #qq7-root .qq7-group-count { color: #7a94aa; font-weight: 400; }
 
@@ -911,16 +951,16 @@ body.qq7-shell .qq7-pet-puppet {
 /* 让输入区盖住企鹅下半身 */
 body.qq7-shell .conversation-input-area {
   position: relative;
-  z-index: 6;
+  /* 不再提高输入区层级：把企鹅上移后无需覆盖，避免压住 App 自身的 tooltip */
+  z-index: auto;
 }
 
-body.qq7-shell .conversation-input__growth-buddy {
+/* 企鹅整体上移到输入框上沿附近，避免遮住输入内容和工具栏 */
+body.qq7-shell .conversation-input__growth-buddy,
+body.qq7-shell .wb-home-route__growth-buddy {
+  top: -140px !important;
   z-index: 3;
   animation-name: qq7-pet-idle-squat;
-}
-
-body.qq7-shell .wb-home-route__growth-buddy {
-  z-index: 3;
 }
 
 /* 眨眼 */
