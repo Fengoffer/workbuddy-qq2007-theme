@@ -243,7 +243,10 @@
 
   /* macOS：原生 -webkit-app-region: drag 区域不会把鼠标事件派发给渲染进程，
      双击缩放只在系统标题栏范围生效。这里改用 WorkBuddy 暴露的窗口 API 接管
-     标题栏 / 菜单栏的拖动与双击缩放，让整个顶部条都能拖动和双击铺满。 */
+     标题栏 / 菜单栏：空白处拖动走 startDrag / stopDrag，双击调 maximize
+     （WorkBuddy 内部即 zoom / unzoom 切换），菜单项保持点击。
+     拖动超过 4px 才真正开始，避免单击 / 双击误触发；窗口已最大化时先还原再拖
+     （WorkBuddy 的拖拽控制器在最大化状态下会直接 no-op）。 */
   function setupWindowChrome() {
     if (!/^Mac/.test(navigator.platform || "")) return;
     const desktopWindow = window.workbuddyDesktop?.window?.getCurrentWindow?.();
@@ -255,13 +258,40 @@
     const isInteractive = (target) => target instanceof Element && Boolean(target.closest(INTERACTIVE));
     const swallow = (promise) => { if (promise && typeof promise.catch === "function") promise.catch(() => {}); };
 
+    let pointerDown = false;
+    let pending = null;
     let dragging = false;
-    const startDrag = (event) => {
-      if (event.button !== 0 || event.detail > 1 || isInteractive(event.target)) return;
+    let restoreTimer = 0;
+
+    const beginDrag = () => {
+      if (!pointerDown || dragging) return;
       dragging = true;
       swallow(desktopWindow.startDrag());
     };
+    const onPointerDown = (event) => {
+      if (event.button !== 0 || event.detail > 1 || isInteractive(event.target)) return;
+      pointerDown = true;
+      pending = { x: event.clientX, y: event.clientY };
+    };
+    const onPointerMove = (event) => {
+      if (!pending || dragging || !pointerDown) return;
+      if (Math.abs(event.clientX - pending.x) < 4 && Math.abs(event.clientY - pending.y) < 4) return;
+      pending = null;
+      const maximized = typeof desktopWindow.isMaximized === "function" ? desktopWindow.isMaximized() : false;
+      Promise.resolve(maximized).then((max) => {
+        if (!pointerDown) return;
+        if (!max) { beginDrag(); return; }
+        swallow(desktopWindow.maximize());
+        restoreTimer = window.setTimeout(() => {
+          restoreTimer = 0;
+          beginDrag();
+        }, 160);
+      }).catch(() => beginDrag());
+    };
     const endDrag = () => {
+      pointerDown = false;
+      pending = null;
+      if (restoreTimer) { window.clearTimeout(restoreTimer); restoreTimer = 0; }
       if (!dragging) return;
       dragging = false;
       if (typeof desktopWindow.stopDrag === "function") swallow(desktopWindow.stopDrag());
@@ -276,10 +306,12 @@
     for (const selector of [".qq7-titlebar", ".qq7-menubar"]) {
       const el = root.querySelector(selector);
       if (!el) continue;
-      el.addEventListener("mousedown", startDrag);
+      el.addEventListener("pointerdown", onPointerDown);
+      el.addEventListener("pointermove", onPointerMove);
       el.addEventListener("dblclick", toggleZoom);
     }
-    window.addEventListener("mouseup", endDrag);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
     window.addEventListener("blur", endDrag);
   }
 
@@ -444,20 +476,33 @@
     rootStyle.setProperty("--qq7-sources-w", Math.round(sourcesWidth) + "px");
   }
 
+  let layoutQueued = false;
+
+  /* 窗口缩放 / 最大化会连续触发 resize 与 ResizeObserver，
+     合并到下一帧执行，减少布局读写抖动 */
+  function queueSyncLayout() {
+    if (layoutQueued) return;
+    layoutQueued = true;
+    window.requestAnimationFrame(() => {
+      layoutQueued = false;
+      syncLayout();
+    });
+  }
+
   function watchLayout() {
     const sidebar = document.querySelector('[data-view-id="sidebar"]');
     const main = document.querySelector('[data-view-id="main-content"]');
     const container = document.querySelector(".teams-container");
-    const mo = new MutationObserver(syncLayout);
+    const mo = new MutationObserver(queueSyncLayout);
     if (sidebar) mo.observe(sidebar, { attributes: true, attributeFilter: ["style"] });
     if (main) mo.observe(main, { attributes: true, attributeFilter: ["style"] });
     if (container && typeof ResizeObserver === "function") {
-      new ResizeObserver(syncLayout).observe(container);
+      new ResizeObserver(queueSyncLayout).observe(container);
     }
     if (sidebar && typeof ResizeObserver === "function") {
-      new ResizeObserver(syncLayout).observe(sidebar);
+      new ResizeObserver(queueSyncLayout).observe(sidebar);
     }
-    window.addEventListener("resize", syncLayout);
+    window.addEventListener("resize", queueSyncLayout);
     window.setInterval(syncLayout, 500);
     syncLayout();
   }
