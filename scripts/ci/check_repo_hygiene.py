@@ -144,6 +144,13 @@ def main() -> int:
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
     version_match = re.search(r"^##\s+(\d+\.\d+\.\d+)", changelog, re.MULTILINE)
     latest_version = version_match.group(1) if version_match else None
+    # 版本标题必须严格是 `## X.Y.Z (YYYY-MM-DD)`，防止 1.0.5 (date) (date) 这类笔误
+    for heading in re.finditer(r"^##\s+(\d+\.\d+\.\d+)(.*)$", changelog, re.MULTILINE):
+        if not re.fullmatch(r" \(\d{4}-\d{2}-\d{2}\)", heading.group(2).rstrip()):
+            line = changelog[: heading.start()].count("\n") + 1
+            errors.append(
+                f"CHANGELOG.md 第 {line} 行版本标题格式应为 `## X.Y.Z (YYYY-MM-DD)`：{heading.group(0).strip()}"
+            )
     if latest_version is None:
         errors.append("CHANGELOG.md 中找不到形如 `## 1.2.3` 的最新版本标题")
     else:

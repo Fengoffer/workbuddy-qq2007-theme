@@ -44,7 +44,16 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("isLoggedIn", self.js)
 
     def test_friend_panel_collapse_selector_scoped(self) -> None:
-        self.assertIn("body.qq7-friend-collapsed #qq7-root .qq7-friend-head .qq7-friend-tab", self.css)
+        self.assertRegex(
+            self.css,
+            r"body\.qq7-friend-collapsed\s+#qq7-root\s+\.qq7-friend-head\s+\.qq7-friend-tab",
+        )
+
+    def test_friend_collapse_keyboard_and_labels(self) -> None:
+        self.assertIn('setAttribute("role", "button")', self.js)
+        self.assertIn('setAttribute("tabindex", "0")', self.js)
+        self.assertIn('"aria-expanded"', self.js)
+        self.assertIn('"展开好友面板"', self.js)
 
     def test_macos_titlebar_zone_exists(self) -> None:
         self.assertIn("qq7-titlebar-jszone", self.js)

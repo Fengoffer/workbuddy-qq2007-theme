@@ -495,10 +495,25 @@
     });
     const collapse = root.querySelector(".qq7-friend-collapse");
     if (collapse) {
-      collapse.addEventListener("click", () => {
-        state.collapsed = !state.collapsed;
+      const syncCollapseButton = () => {
         document.body.classList.toggle("qq7-friend-collapsed", state.collapsed);
         collapse.textContent = state.collapsed ? "▶" : "◀";
+        collapse.title = state.collapsed ? "展开好友面板" : "收起好友面板";
+        collapse.setAttribute("aria-label", collapse.title);
+        collapse.setAttribute("aria-expanded", String(!state.collapsed));
+      };
+      const toggleCollapse = () => {
+        state.collapsed = !state.collapsed;
+        syncCollapseButton();
+      };
+      collapse.setAttribute("role", "button");
+      collapse.setAttribute("tabindex", "0");
+      syncCollapseButton();
+      collapse.addEventListener("click", toggleCollapse);
+      collapse.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        toggleCollapse();
       });
     }
 
