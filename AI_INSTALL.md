@@ -17,7 +17,7 @@ set -e
 # 1. 退出 WorkBuddy
 osascript -e 'tell application "WorkBuddy" to quit' 2>/dev/null || true
 sleep 4
-pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null || true
+pkill -f "WorkBuddy.app/Contents/MacOS/Electron" 2>/dev/null || pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null || true
 
 # 2. 克隆到临时目录
 TMP="$(mktemp -d)"
@@ -29,14 +29,14 @@ bash "$TMP/wbqq7/scripts/macos/install.sh"
 
 # 4. 验证
 sleep 8
-pgrep -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" >/dev/null && echo "WorkBuddy 已启动"
+pgrep -f "WorkBuddy.app/Contents/MacOS/Electron" >/dev/null && echo "WorkBuddy 已启动"
 ```
 
 如果安装失败或启动后白屏：
 
 ```bash
 bash "$TMP/wbqq7/scripts/macos/uninstall.sh"
-open -a /Applications/WorkBuddy.app
+env -u ELECTRON_RUN_AS_NODE open -a /Applications/WorkBuddy.app
 ```
 
 ## Windows（实验性）

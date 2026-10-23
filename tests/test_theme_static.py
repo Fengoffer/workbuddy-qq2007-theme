@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -20,6 +21,8 @@ THEME_CSS = ROOT / "theme" / "qq2007-chrome.css"
 INSTALL_SH = ROOT / "scripts" / "macos" / "install.sh"
 UNINSTALL_SH = ROOT / "scripts" / "macos" / "uninstall.sh"
 COMMON_SH = ROOT / "scripts" / "macos" / "common.sh"
+SHELL_DIRS = (ROOT / "scripts",)
+DOCS_WITH_LAUNCH = ("AI_INSTALL.md", "docs/INSTALL_MACOS.md", "docs/TROUBLESHOOTING.md", "README.md")
 
 
 class ThemeStaticTests(unittest.TestCase):
@@ -54,6 +57,28 @@ class ThemeStaticTests(unittest.TestCase):
     def test_installer_launch_clears_node_mode(self) -> None:
         install = INSTALL_SH.read_text(encoding="utf-8")
         self.assertIn("env -u ELECTRON_RUN_AS_NODE", install)
+
+    def test_account_logout_hook_exists(self) -> None:
+        self.assertIn("accountMenuShowsLoggedOut", self.js)
+        self.assertIn("user-menu-trigger--workbuddy", self.js)
+
+    def test_shell_variables_not_followed_by_multibyte(self) -> None:
+        bad = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7f])")
+        for directory in SHELL_DIRS:
+            for path in sorted(directory.rglob("*.sh")):
+                text = path.read_text(encoding="utf-8")
+                self.assertIsNone(bad.search(text), msg=f"{path} 中变量紧邻非 ASCII 字符，请写成 ${{VAR}}")
+
+    def test_gitee_release_script_has_target_commitish(self) -> None:
+        script = (ROOT / "scripts" / "maintenance" / "create-gitee-release.sh").read_text(encoding="utf-8")
+        self.assertIn("target_commitish", script)
+
+    def test_docs_use_electron_process_and_guarded_launch(self) -> None:
+        for rel in DOCS_WITH_LAUNCH:
+            text = (ROOT / rel).read_text(encoding="utf-8")
+            self.assertIn("env -u ELECTRON_RUN_AS_NODE", text, msg=rel)
+            if rel != "README.md":
+                self.assertIn("Contents/MacOS/Electron", text, msg=rel)
 
 
 if __name__ == "__main__":

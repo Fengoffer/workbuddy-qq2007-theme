@@ -74,9 +74,9 @@ bash scripts/macos/uninstall.sh
 
 ```bash
 # 先退出残留进程
-pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null
+pkill -f "WorkBuddy.app/Contents/MacOS/Electron" 2>/dev/null || pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null
 bash scripts/macos/uninstall.sh
-open -a /Applications/WorkBuddy.app
+env -u ELECTRON_RUN_AS_NODE open -a /Applications/WorkBuddy.app
 ```
 
 如果仍然异常，用备份恢复 `app.asar`：

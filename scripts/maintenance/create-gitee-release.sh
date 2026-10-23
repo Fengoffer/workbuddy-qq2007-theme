@@ -2,7 +2,7 @@
 # 用 Gitee OpenAPI 创建发行版（Release）。
 #
 # 用法:
-#   bash scripts/maintenance/create-gitee-release.sh v1.0.0 /tmp/release-notes.md
+#   bash scripts/maintenance/create-gitee-release.sh vX.Y.Z /tmp/release-notes.md
 #
 # token 获取顺序：
 #   1. 环境变量 GITEE_TOKEN；
@@ -24,7 +24,7 @@ fi
 
 REPO="${GITEE_REPO:-fengoffer/workbuddy-qq2007-theme}"
 TITLE="${GITEE_RELEASE_TITLE:-WorkBuddy QQ 2007 主题 $TAG}"
-TARGET="${GITEE_RELEASE_TARGET:-main}"
+TARGET="${GITEE_RELEASE_TARGET:-$(git rev-parse "$TAG^{commit}" 2>/dev/null || echo main)}"
 
 TOKEN="${GITEE_TOKEN:-}"
 if [ -z "$TOKEN" ]; then
@@ -35,12 +35,13 @@ if [ -z "$TOKEN" ]; then
   exit 1
 fi
 
-# token 写入 600 权限的临时文件，避免出现在 curl 的进程参数里
+# token 写入 600 权限的临时文件，避免出现在 curl 的进程参数里；
+# trap 紧跟 TOKEN_FILE 创建，保证后续任何一步失败都不会留下 token 文件
 TOKEN_FILE="$(mktemp)"
+trap 'rm -f "${TOKEN_FILE:-}" "${RESPONSE:-}"' EXIT
 RESPONSE="$(mktemp)"
 chmod 600 "$TOKEN_FILE"
 printf '%s' "$TOKEN" > "$TOKEN_FILE"
-trap 'rm -f "$TOKEN_FILE" "$RESPONSE"' EXIT
 
 HTTP_CODE="$(curl -sS -o "$RESPONSE" -w '%{http_code}' --max-time 60 -X POST \
   "https://gitee.com/api/v5/repos/$REPO/releases" \

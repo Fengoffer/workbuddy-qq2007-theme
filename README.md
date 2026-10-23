@@ -259,7 +259,7 @@ powershell -ExecutionPolicy Bypass -File scripts\windows\uninstall.ps1
 
 ```bash
 bash scripts/macos/uninstall.sh
-open -a /Applications/WorkBuddy.app
+env -u ELECTRON_RUN_AS_NODE open -a /Applications/WorkBuddy.app
 ```
 
 如果仍启动失败，用备份恢复 `app.asar`（见「安全与回滚」）。

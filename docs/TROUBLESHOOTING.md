@@ -33,9 +33,9 @@ sudo -E bash scripts/macos/install.sh
 `index.html` 被截断的典型表现。处理：
 
 ```bash
-pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null
+pkill -f "WorkBuddy.app/Contents/MacOS/Electron" 2>/dev/null || pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null
 bash scripts/macos/uninstall.sh
-open -a /Applications/WorkBuddy.app
+env -u ELECTRON_RUN_AS_NODE open -a /Applications/WorkBuddy.app
 ```
 
 仍失败则恢复 app.asar：

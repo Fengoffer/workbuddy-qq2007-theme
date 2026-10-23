@@ -76,7 +76,21 @@
     return loginPlaceholder ? null : "";
   }
 
+  /* WorkBuddy 未登录时用户菜单只渲染头像按钮，class 里没有 --workbuddy；
+     菜单还没渲染时无法判断，返回 false 保留缓存 / 占位，等下一轮轮询。 */
+  function accountMenuShowsLoggedOut() {
+    const trigger = document.querySelector(".user-menu-trigger");
+    if (!trigger) return false;
+    if (String(trigger.className || "").includes("user-menu-trigger--workbuddy")) return false;
+    return !trigger.querySelector(".user-menu-trigger-name") && !(trigger.textContent || "").trim();
+  }
+
   function displayName() {
+    if (accountMenuShowsLoggedOut()) {
+      // 明确退出登录（非登录过期文案）：清掉旧账号
+      accountNameCache = "";
+      return "WorkBuddy 用户";
+    }
     const resolved = readAccountName();
     if (resolved === null) {
       // 登录过期 / 退出登录：清掉旧账号，避免继续显示上一个账号

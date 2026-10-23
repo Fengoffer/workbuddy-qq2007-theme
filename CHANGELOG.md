@@ -1,10 +1,18 @@
 # Changelog
 
-## Unreleased
+## 1.0.2 (2026-10-23)
+
+### 修复
+- 明确退出登录（用户菜单只剩头像按钮）时清空账号缓存并显示「WorkBuddy 用户」，覆盖“登录过期”之外的登出路径
+
+### 文档
+- 安装 / 排障 / AI 安装文档中的进程名改为 WorkBuddy 5.8.3 实际的 `Contents/MacOS/Electron`，启动命令补 `env -u ELECTRON_RUN_AS_NODE`
+- README、INSTALL_MACOS、TROUBLESHOOTING 中的启动命令同步加环境清理
 
 ### 维护工程
 - 修复维护脚本中变量紧邻中文标点时的 unbound variable 问题（`verify-install.sh` / `sync-remotes.sh` / `create-gitee-release.sh`）
-- Gitee 发行版脚本补充 `target_commitish`，兼容 Gitee OpenAPI 校验
+- Gitee 发行版脚本补充 `target_commitish`（默认取 tag 对应 commit），token 临时文件提前注册清理 trap
+- 静态回归检查新增：中文标点变量、`target_commitish`、文档进程名与启动命令、退出登录账号钩子
 
 ## 1.0.1 (2026-10-23)
 
