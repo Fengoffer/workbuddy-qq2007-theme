@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### 修复
+- 修复安装主题后顶部标题栏无法拖动窗口、双击不能缩放的问题：主题把 `.teams-container` 下移到 94px 后，原版 `.workbuddy-topbar` 的 `-webkit-app-region: drag` 拖拽区已不在窗口顶部；现由 `.qq7-titlebar` 接管拖拽区，菜单栏空白处同样可拖动，菜单项保持 `no-drag`
+
 ### 维护工程
 - 新增 GitHub Actions CI：Python 单元测试、ShellCheck、PowerShell 语法、JavaScript 语法、仓库卫生与版本一致性检查
 - 新增 `tests/test_patch_index.py`：覆盖注入、清理、字节数对齐、幂等性与 asar 头部读取
