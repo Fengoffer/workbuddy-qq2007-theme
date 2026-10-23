@@ -79,9 +79,11 @@
   /* WorkBuddy 未登录时用户菜单只渲染头像按钮，class 里没有 --workbuddy；
      菜单还没渲染时无法判断，返回 false 保留缓存 / 占位，等下一轮轮询。 */
   function accountMenuShowsLoggedOut() {
-    const trigger = document.querySelector(".user-menu-trigger");
-    if (!trigger) return false;
-    if (String(trigger.className || "").includes("user-menu-trigger--workbuddy")) return false;
+    const triggers = [...document.querySelectorAll(".user-menu-trigger")];
+    if (!triggers.length) return false;
+    // 任意一个登录态 trigger 都说明已登录，防止隐藏的旧登录按钮导致误判
+    if (triggers.some((t) => String(t.className || "").includes("user-menu-trigger--workbuddy"))) return false;
+    const trigger = triggers.find((t) => t.getClientRects().length > 0) || triggers[0];
     return !trigger.querySelector(".user-menu-trigger-name") && !(trigger.textContent || "").trim();
   }
 

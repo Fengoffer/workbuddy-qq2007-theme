@@ -88,6 +88,7 @@ Test-Path "$env:LOCALAPPDATA\Programs\WorkBuddy\resources\app.asar.unpacked\rend
 | 皮肤开关依赖 `localStorage` | 清缓存后恢复默认（开启） | 用菜单栏「原版」按钮切换 |
 | 仅主窗口应用皮肤 | 次级窗口保持原生 | 设计如此，避免遮挡原生功能 |
 | macOS 原生标题栏高度按 38px 适配 | 不同系统版本可能偏移热区分界 | 调整 CSS 变量 `--qq7-native-titlebar` |
+| 账号名读取依赖 WorkBuddy 用户菜单 DOM | 未来版本改 class / 结构时可能先显示「WorkBuddy 用户」 | 更新 `ACCOUNT_NAME_SELECTORS` 与 `accountMenuShowsLoggedOut` |
 
 ## 6. 反馈模板
 

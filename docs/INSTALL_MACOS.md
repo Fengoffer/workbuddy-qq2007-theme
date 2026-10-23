@@ -74,7 +74,7 @@ bash scripts/macos/uninstall.sh
 
 ```bash
 # 先退出残留进程
-pkill -f "WorkBuddy.app/Contents/MacOS/Electron" 2>/dev/null || pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null
+pkill -f "WorkBuddy.app/Contents/MacOS/Electron" 2>/dev/null || pkill -f "WorkBuddy.app/Contents/MacOS/WorkBuddy" 2>/dev/null || true
 bash scripts/macos/uninstall.sh
 env -u ELECTRON_RUN_AS_NODE open -a /Applications/WorkBuddy.app
 ```

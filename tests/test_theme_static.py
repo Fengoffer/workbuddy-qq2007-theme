@@ -61,6 +61,8 @@ class ThemeStaticTests(unittest.TestCase):
     def test_account_logout_hook_exists(self) -> None:
         self.assertIn("accountMenuShowsLoggedOut", self.js)
         self.assertIn("user-menu-trigger--workbuddy", self.js)
+        self.assertIn('querySelectorAll(".user-menu-trigger")', self.js)
+        self.assertIn("getClientRects", self.js)
 
     def test_shell_variables_not_followed_by_multibyte(self) -> None:
         bad = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7f])")
