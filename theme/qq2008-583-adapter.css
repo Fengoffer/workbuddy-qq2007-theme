@@ -11,8 +11,8 @@
 #root .teams-container [data-view-id="main-content"],
 #root .teams-container [data-view-id="detail-panel"],
 #root .teams-container [data-view-id="sources-panel"] {
-  background-color: #f6fbfe !important;
-  background-image: linear-gradient(135deg, #e6f4fc 0%, #fbfdff 46%, #eef8fd 100%) !important;
+  background-color: var(--qq7-c-F6FBFE, #f6fbfe) !important;
+  background-image: linear-gradient(135deg, var(--qq7-c-E6F4FC, #e6f4fc) 0%, var(--qq7-c-FBFDFF, #fbfdff) 46%, var(--qq7-c-EEF8FD, #eef8fd) 100%) !important;
 }
 
 /* 中间层一律透明，让上面的主题渐变透出来。
@@ -46,15 +46,15 @@
 
 /* --- 2. 输入框：统一换成 QQ 2008 立体白框（会话页 + 首页共用 .cr-input-container） --- */
 .cr-input-container {
-  border: 1px solid #8fb9d4 !important;
+  border: 1px solid var(--qq7-c-8FB9D4, #8fb9d4) !important;
   border-radius: 12px !important;
   background: #ffffff !important;
   box-shadow: 0 1px 4px rgba(43, 94, 129, .12), inset 0 1px rgba(255, 255, 255, .9) !important;
 }
 
 .cr-input-toolbar {
-  border-top: 1px solid #e0ebf2 !important;
-  background: #f7fbfe !important;
+  border-top: 1px solid var(--qq7-c-E0EBF2, #e0ebf2) !important;
+  background: var(--qq7-c-F7FBFE, #f7fbfe) !important;
   border-radius: 0 0 11px 11px !important;
 }
 
@@ -70,7 +70,7 @@
 /* 输入文字 */
 .conversation-input [contenteditable="true"],
 .wb-home-route__input [contenteditable="true"] {
-  color: #263d50 !important;
+  color: var(--qq7-c-263D50, #263d50) !important;
   font-size: 14px !important;
   line-height: 1.55 !important;
 }
@@ -94,23 +94,23 @@
 
 /* --- 4. 会话消息：按皮肤色板做轻量 QQ 化 --- */
 .cr-self-bubble {
-  border: 1px solid #9ec8e0 !important;
+  border: 1px solid var(--qq7-c-9EC8E0, #9ec8e0) !important;
   border-radius: 8px !important;
-  background: linear-gradient(180deg, #eaf6fe 0%, #d3eaf8 100%) !important;
-  color: #263d50 !important;
+  background: linear-gradient(180deg, var(--qq7-c-EAF6FE, #eaf6fe) 0%, var(--qq7-c-D3EAF8, #d3eaf8) 100%) !important;
+  color: var(--qq7-c-263D50, #263d50) !important;
   box-shadow: inset 0 1px rgba(255, 255, 255, .85) !important;
 }
 
 .cr-agent__content,
 .cr-markdown {
-  color: #263d50 !important;
+  color: var(--qq7-c-263D50, #263d50) !important;
 }
 
 .cr-agent__name {
-  color: #173f5d !important;
+  color: var(--qq7-c-173F5D, #173f5d) !important;
   font-weight: 500 !important;
 }
 
 .cr-message-list__bottom-mask {
-  background: linear-gradient(180deg, rgba(246, 251, 254, 0), #f6fbfe) !important;
+  background: linear-gradient(180deg, rgba(246, 251, 254, 0), var(--qq7-c-F6FBFE, #f6fbfe)) !important;
 }

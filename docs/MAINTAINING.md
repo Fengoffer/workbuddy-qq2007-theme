@@ -23,7 +23,7 @@
 | `theme/` | 真正注入到 WorkBuddy 的资源 |
 | `theme/qq2008-skin.css` | 皮肤基础样式（历史命名，当前版本仍复用） |
 | `theme/qq2008-583-adapter.css` | WorkBuddy 5.8.3 聊天界面适配 |
-| `theme/qq2007-chrome.css` / `.js` | 2007 外壳、菜单栏、好友面板、状态栏、签名、QQ 宠物 |
+| `theme/qq2007-chrome.css` / `.js` | 2007 外壳、菜单栏、好友面板、状态栏、签名、**颜色编辑换肤**、QQ 宠物 |
 | `theme/qq2008-notify.js` | 皮肤开关、通知音替换 |
 | `theme/qq7pet/` | Ruffle 运行时 + 19 个宠物 SWF |
 | `scripts/common/` | 跨平台共享的字节对齐工具 |
@@ -188,7 +188,28 @@ CI 最常见的失败原因：
 
 `theme/qq-message.wav`、`theme/qq-failure.wav` 保持文件名不变；多播放路径拦截、900ms 去重和原生静音逻辑在 `theme/qq2008-notify.js`。改完实测「只响一次滴滴声」。
 
-### 7.5 新增主题资源
+### 7.5 新增换肤配色 / 改色相
+
+换肤由两层配合完成：
+
+1. **样式层**：三张样式表里的皮肤色值必须写成 `var(--qq7-c-XXXXXX, #xxxxxx)`，
+   **令牌名 = 原始色值的 6 位大写十六进制**。静态测试会校验回退色等于令牌名。
+2. **引擎层**：`qq2007-chrome.js` 里的 `SKIN_TOKENS` 数组必须覆盖样式表出现的**全部**令牌
+   （测试会比对集合，漏一个就会漏色）。
+
+新增一个预设色：
+
+```js
+// qq2007-chrome.js 的 COLOR_ITEMS
+{ id: "mycolor", label: "你的颜色名", hue: 123 }
+```
+
+色相值建议从 QQ2007 原版取（`.rdata` VA `0x541D12` 的常量表，见
+`qq_analysis/REA_GHIDRA_SETUP.md`），保持与原版一致的语义。
+
+改完必须跑：`python3 -m unittest discover -s tests`，其中 9 项专门守护换肤逻辑。
+
+### 7.6 新增主题资源
 
 1. 放进 `theme/`；
 2. 加入 `scripts/macos/install.sh` 的 `for f in ...` 列表；

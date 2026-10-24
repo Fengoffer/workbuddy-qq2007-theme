@@ -39,6 +39,8 @@
   let root = null;
   let titleEl = null;
   let accountNameCache = "";
+  /* 换肤令牌的 <style> 元素；在 syncSkin 里会被清空，所以必须早于它声明（避免 TDZ） */
+  let themeStyleEl = null;
 
   function skinEnabled() {
     const link = document.querySelector(SKIN_LINK_SELECTOR);
@@ -51,6 +53,12 @@
     document.body.classList.toggle("qq7-shell", on);
     document.body.classList.toggle("qq7-off", !on);
     if (root) root.style.display = on ? "" : "none";
+    // 皮肤关闭时清掉自选配色令牌，让原生界面完全不受主题配色影响
+    if (themeStyleEl) {
+      // 关闭：清令牌让原生界面不受影响；重新打开：恢复已保存的自选配色
+      if (!on) themeStyleEl.textContent = "";
+      else if (themeStyleEl.textContent === "") applyTheme();
+    }
     if (!on) {
       // 皮肤关闭时清掉运行态 class，避免残留的「加载中」占位图 / 举牌动画
       document.body.classList.remove("qq7-pet-loading", "qq7-pet-has-options", "qq7-panel-open");
@@ -661,7 +669,7 @@
 
     document.body.classList.add("qq7-js-window-chrome");
 
-    const INTERACTIVE = ".qq7-menu-item, .qq7-title-btns, .qq7-friend, .qq7-statusbar, button, a, input, textarea, select, [contenteditable='true']";
+    const INTERACTIVE = ".qq7-menu-item, .qq7-colorbtn, .qq7-title-btns, .qq7-friend, .qq7-statusbar, button, a, input, textarea, select, [contenteditable='true']";
     const isInteractive = (target) => target instanceof Element && Boolean(target.closest(INTERACTIVE));
     const swallow = (promise) => { if (promise && typeof promise.catch === "function") promise.catch(() => {}); };
 
@@ -756,6 +764,7 @@
       <div class="qq7-titlebar">
         <span class="qq7-title-ico"></span>
         <span class="qq7-title-text">WorkBuddy 2007</span>
+        <span class="qq7-colorbtn" role="button" tabindex="-1" aria-haspopup="menu" aria-expanded="false" title="颜色编辑" aria-label="颜色编辑"><i></i></span>
         <div class="qq7-titlebar-jszone"></div>
       </div>
       <div class="qq7-menubar">
@@ -777,6 +786,13 @@
     `;
     document.body.appendChild(root);
     titleEl = root.querySelector(".qq7-title-text");
+
+    // QQ2007 主面板右上角「颜色编辑」按钮：恢复已保存的配色并挂上色板菜单
+    const colorBtn = root.querySelector(".qq7-colorbtn");
+    if (colorBtn) {
+      applyTheme();
+      wireColorButton(colorBtn);
+    }
 
     // 菜单
     root.querySelectorAll(".qq7-menu-item").forEach((el) => {
@@ -2201,6 +2217,362 @@
     // replay 保持 playQQ 的原签名；但绕过播放开关只保留诊断用途时，
     // 应尊重配置——封装为带配置检查的版本，禁用时静默跳过。
     window.__QQ7_NOTIFY_SOUND__ = { replay: () => playQQ(true) };
+  }
+
+  /* ---------------------------------------------------------------------------
+     QQ 2007 换肤配色引擎
+     ---------------------------------------------------------------------------
+     QQ2007 正式版的「颜色编辑」不替换整套皮肤位图，而是对默认皮肤做整体色相旋转
+     （低饱和像素保持不变），并可再调亮度。预设色相从 QQ2007 正式版 QQ.exe 逆向得到
+     （.rdata，文件偏移 1318162 / VA 0x541D12）：
+
+       DWORD 序列 0x00410037, 0x0041007F, 0x004100CA,
+                  0x00410112, 0x0041015A, 0x0041019F
+       高字节    55°, 127°, 202°, 274°, 346°, 415°(=55°+360° 环绕插值)
+       低字节    0x41 为常量标记
+
+     菜单文字取自 QQRes.dll 字符串表：
+       颜色恢复 | 贵族紫 | 水晶蓝 | 天际蓝 | 苹果绿 | 沙漠黄 | 玫瑰红 | 自定义
+
+     「天际蓝」即皮肤自身默认色相（HUE_BASE = 210°），「颜色恢复」回到同一默认。
+
+     三张样式表的皮肤色值已统一令牌化为 var(--qq7-c-XXXXXX, #XXXXXX)，令牌名即原始
+     色值。运行时按 (目标色相 - 210) 旋转令牌的 H、保持 S/L，汇总成一条 <style> 写入
+     :root，一次 DOM 操作完成整屏换色。任何一步失败都只退回 var() 的原始色值。
+  --------------------------------------------------------------------------- */
+  const HUE_BASE = 210;              // 本主题皮肤自身的色相（天际蓝）
+  const HUE_KEY = "WORKBUDDY_QQ7_SKIN_HUE";
+  const LIGHT_KEY = "WORKBUDDY_QQ7_SKIN_LIGHT";
+  const HUE_MAX = 359;
+  const LIGHT_MAX = 45;             // 亮度偏移上限 ±45%（对应 QQ2007 亮度滑条）
+  const COLOR_ITEMS = [
+    { id: "restore", label: "颜色恢复", hue: HUE_BASE },
+    { id: "noble", label: "贵族紫", hue: 274 },
+    { id: "crystal", label: "水晶蓝", hue: 202 },
+    { id: "sky", label: "天际蓝", hue: HUE_BASE },
+    { id: "apple", label: "苹果绿", hue: 127 },
+    { id: "desert", label: "沙漠黄", hue: 55 },
+    { id: "rose", label: "玫瑰红", hue: 346 }
+  ];
+  // 皮肤色令牌（名字即原始 RRGGBB，不含 #）
+  const SKIN_TOKENS = [
+    "0054E3", "04131C", "061923", "061C2B", "071F31", "07558F", "09151E", "0A1720", "0A4FC0", "0A5FCE",
+    "0A62F0", "0B1822", "0B1923", "0B3A5B", "0B6EFB", "0C202D", "0C2534", "0C4A94", "0C5F9F", "0D202B",
+    "0D2635", "0D4C8C", "0E2330", "0F202C", "0F4E82", "0F5D9B", "102531", "102532", "102631", "102A3A",
+    "102B3B", "102C3C", "122834", "12395C", "123C63", "125171", "1265AA", "126DB4", "132733", "133448",
+    "135F9D", "142936", "142B38", "142C39", "145C84", "145D99", "1476C3", "152C3A", "15578A", "155F9F",
+    "163E5C", "17303D", "173352", "173B50", "173D53", "173F5D", "17436B", "17649E", "176AA9", "1777C3",
+    "183441", "18384A", "183A54", "18567C", "1878C5", "193340", "193846", "194B67", "1A3B4D", "1A3C4E",
+    "1A5AA6", "1A7DFF", "1B3948", "1C5672", "1C78AA", "1D78A9", "1F73B5", "203C50", "203D4D", "20506B",
+    "20516B", "223F54", "22496F", "2274B5", "234B67", "234C70", "244760", "244B5E", "245B81", "246F9C",
+    "257EAA", "263D50", "2677B6", "278DBF", "286888", "2878B3", "287EBE", "29475C", "294B5D", "2A6491",
+    "2A6FC0", "2C5970", "2C5C73", "2D83C6", "2E607A", "2E83C5", "2F688D", "2F8ED2", "2F90FF", "315B71",
+    "315F76", "315F78", "315F7F", "3187C7", "3292D7", "338AC7", "3491D4", "35677E", "356981", "36566C",
+    "36576E", "365F72", "37677D", "376D86", "396A80", "396B82", "39769F", "397FB4", "3A7895", "3B82CF",
+    "3B86A9", "3C98DA", "3D6F91", "3D6F96", "3D8BD6", "3D99DC", "3D9BDE", "3E83A5", "3F97FF", "405F74",
+    "425F74", "42677F", "47758D", "48677D", "49A9DE", "4A84B8", "4A87A4", "4B87A2", "4B8CD4", "4B94C5",
+    "4B98CE", "4B9ED8", "4C8FBD", "4E7691", "526F83", "5798C4", "587899", "5A9DE8", "5B7590", "5CABE1",
+    "5D9BC7", "5F7789", "5F7F95", "607989", "617B8E", "61B8E8", "667F92", "668291", "6CA3C6", "6F9FBE",
+    "6FA6CA", "718B9A", "75B7E2", "75C1EE", "76C3F0", "77A9CA", "7890A0", "7899AA", "78ACD0", "79ADD1",
+    "79C4F1", "7A94AA", "7B91A1", "7EADD0", "7EAFD0", "7F9DB9", "7FAECA", "7FB2D9", "82B3D2", "83A7BA",
+    "85C0E5", "86B8D7", "8AB4D6", "8AB5D1", "8BA0AF", "8BB5D0", "8CA9B8", "8DB8D5", "8DB9D4", "8DB9D5",
+    "8EB4C7", "8EB9D6", "8FA9B9", "8FB4D0", "8FB5C8", "8FB9D4", "8FC9EC", "91A3B1", "91ABBA", "91B7CB",
+    "91D7FA", "9AA9B6", "9AB7CF", "9ABBD0", "9BBFD7", "9EC8E0", "9FB3C4", "9FBED2", "9FBFD8", "9FCFEE",
+    "A3C0D8", "A7C8DC", "A7C9DA", "A9C4D2", "A9C7DD", "A9D3EF", "A9D7F2", "AAC6DD", "AAC9DC", "AFD9F1",
+    "B4CEDF", "B5D2E4", "B6D2E6", "B7C9D8", "B7CEDB", "B7D2E2", "B7D9F0", "B8D7E9", "B9CFE2", "B9D9E9",
+    "B9DFF5", "BCDCF4", "BFD6E2", "BFD7E3", "BFE4FF", "C3D8E8", "C4E1F3", "C5E2F3", "C6E4F5", "C8DBEA",
+    "C9E3F3", "C9E7FA", "CBE6F6", "CCE9FA", "CCECFF", "CFE6F8", "CFE6FB", "CFE7F5", "CFE7F8", "D0E2ED",
+    "D0E6F4", "D3E9FA", "D3EAF8", "D5EAFA", "D6EAF7", "D6EBFB", "D7EAF6", "D7ECF8", "D8E9F3", "D8ECFB",
+    "D8EDF7", "D8F0FD", "D9EBF6", "D9ECFB", "D9EFFC", "DBEAF4", "DCEEF9", "DCEEFC", "DCF4FF", "DDF0FD",
+    "DFEAF7", "DFEEFB", "DFF3FF", "DFF5FF", "E0EBF2", "E2F0F8", "E2F1FC", "E3F0F8", "E3F2FB", "E3F2FD",
+    "E4F0F7", "E4F3FB", "E5F3FB", "E6F3FD", "E6F4FC", "E7F2F8", "E7F3FD", "E7F4FA", "E8F3FA", "E8F4FE",
+    "E8F4FF", "E9F5FF", "E9F6FD", "EAF3F9", "EAF5FF", "EAF6FE", "EAF6FF", "EAF7FF", "EDF5FA", "EDF7FF",
+    "EDF8FF", "EEF5FB", "EEF6FC", "EEF8FD", "EEF8FF", "EFF9FF", "EFFAFF", "F0F9FF", "F1F7FB", "F1FAFF",
+    "F2F8FC", "F2F9FF", "F4F9FD", "F4FBFF", "F6FBFE", "F6FCFF", "F7FBFE", "F7FCFF", "F8FDFF", "F9FDFF",
+    "FBFDFF"
+  ];
+
+  const hexToRgb = (hex) => {
+    const h = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  };
+
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (max === min) return [0, 0, l];
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h;
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+    return [h * 360, s, l];
+  }
+
+  function hueToRgb(p, q, t) {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  }
+
+  function hslToHex(h, s, l) {
+    h = (((h % 360) + 360) % 360) / 360;
+    let r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hueToRgb(p, q, h + 1 / 3);
+      g = hueToRgb(p, q, h);
+      b = hueToRgb(p, q, h - 1 / 3);
+    }
+    const to = (v) => Math.min(255, Math.max(0, Math.round(v * 255)));
+    return ("000000" + ((to(r) << 16) | (to(g) << 8) | to(b)).toString(16).toUpperCase()).slice(-6);
+  }
+
+  /* 按目标色相旋转单个令牌：只改 H，保持 S/L；低饱和（灰白）保持原值 */
+  function rotateToken(hex, targetHue, lightShift) {
+    const [r, g, b] = hexToRgb(hex);
+    const [h, s, l] = rgbToHsl(r, g, b);
+    if (s < 0.15) return "#" + hex;
+    const nl = Math.min(0.99, Math.max(0.02, l + lightShift));
+    return "#" + hslToHex(h + (targetHue - HUE_BASE), s, nl);
+  }
+
+  /* 读取主题设置：{hue, light, custom}；custom=false 表示使用皮肤默认天际蓝 */
+  function readTheme() {
+    let hue = HUE_BASE;
+    let light = 0;
+    let custom = false;
+    try {
+      const rawHue = localStorage.getItem(HUE_KEY);
+      if (rawHue !== null) {
+        const parsed = Number(rawHue);
+        if (Number.isFinite(parsed) && parsed >= 0 && parsed <= HUE_MAX) { hue = parsed; custom = true; }
+      }
+      const rawLight = localStorage.getItem(LIGHT_KEY);
+      if (rawLight !== null) {
+        const parsed = Number(rawLight);
+        if (Number.isFinite(parsed)) light = Math.min(LIGHT_MAX, Math.max(-LIGHT_MAX, parsed));
+      }
+    } catch (error) {}
+    return { hue, light, custom };
+  }
+
+  function saveTheme(theme) {
+    try {
+      if (theme && theme.custom) {
+        localStorage.setItem(HUE_KEY, String(Math.round(theme.hue)));
+        localStorage.setItem(LIGHT_KEY, String(Math.round(theme.light || 0)));
+      } else {
+        localStorage.removeItem(HUE_KEY);
+        localStorage.removeItem(LIGHT_KEY);
+      }
+    } catch (error) {}
+  }
+
+
+  function applyTheme(theme) {
+    const t = theme || readTheme();
+    const delta = t.custom ? (t.hue - HUE_BASE) : 0;
+    const light = t.custom ? (t.light || 0) / 100 : 0;
+    if (!themeStyleEl) {
+      themeStyleEl = document.createElement("style");
+      themeStyleEl.id = "qq7-theme-vars";
+      document.head.appendChild(themeStyleEl);
+    }
+    if (!delta && !light) {
+      themeStyleEl.textContent = "";
+      return t;
+    }
+    const rules = [];
+    for (const token of SKIN_TOKENS) {
+      rules.push("--qq7-c-" + token + ":" + rotateToken(token, t.hue, light));
+    }
+    themeStyleEl.textContent = ":root{" + rules.join(";") + "}";
+    return t;
+  }
+
+  /* 当前配色对应的色板小方块颜色（用于菜单左侧色块） */
+  function swatchFor(hue) {
+    return rotateToken("0A62F0", hue, 0);
+  }
+
+  function colorMenuHtml() {
+    const theme = readTheme();
+    const isDefault = !theme.custom;
+    const rows = COLOR_ITEMS.map((item) => {
+      const current = isDefault ? item.id === "restore" : (item.id === "sky" && theme.hue === HUE_BASE);
+      const chip = item.id === "restore" ? "linear-gradient(135deg,#ff7e00,#0a62f0)"
+        : swatchFor(item.hue);
+      return `<div class="qq7-colormenu-item${current ? " is-current" : ""}" data-color="${item.id}" role="menuitem" tabindex="0">`
+        + `<span class="qq7-colormenu-chip" style="background:${chip}"></span>`
+        + `<span>${item.label}</span></div>`;
+    }).join("");
+    return rows
+      + `<div class="qq7-colormenu-sep"></div>`
+      + `<div class="qq7-colormenu-item${isDefault ? "" : " is-current"}" data-color="custom" role="menuitem" tabindex="0">`
+      + `<span class="qq7-colormenu-chip" style="background:linear-gradient(135deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f)"></span>`
+      + `<span>自定义</span><span class="qq7-colormenu-hint">色调/亮度</span></div>`;
+  }
+
+  function pickerHtml() {
+    const theme = readTheme();
+    const hue = theme.custom ? Math.round(theme.hue) : HUE_BASE;
+    const light = Math.round(theme.custom ? (theme.light || 0) : 0);
+    return `
+      <div class="qq7-picker-row">
+        <span class="qq7-picker-label">色调</span>
+        <input class="qq7-hue" type="range" min="0" max="${HUE_MAX}" step="1" value="${hue}" aria-label="色调">
+        <span class="qq7-picker-value" data-hue-val>${hue}°</span>
+      </div>
+      <div class="qq7-picker-row">
+        <span class="qq7-picker-label">亮度</span>
+        <input class="qq7-light" type="range" min="-${LIGHT_MAX}" max="${LIGHT_MAX}" step="1" value="${light}" aria-label="亮度">
+        <span class="qq7-picker-value" data-light-val>${light > 0 ? "+" : ""}${light}%</span>
+      </div>
+      <div class="qq7-picker-actions">
+        <button class="qq7-picker-btn" type="button" data-picker="cancel">取消</button>
+        <button class="qq7-picker-btn" type="button" data-picker="ok">确定</button>
+      </div>`;
+  }
+
+  let colorMenuEl = null;
+  let colorBtnEl = null;
+  let pickerDraft = null;
+
+  function closeColorMenu() {
+    if (colorMenuEl) colorMenuEl.hidden = true;
+    if (colorBtnEl) colorBtnEl.setAttribute("aria-expanded", "false");
+    if (pickerDraft) {
+      const picker = colorMenuEl && colorMenuEl.querySelector(".qq7-picker");
+      if (picker) picker.hidden = true;
+      pickerDraft = null;
+      applyTheme();   // 丢弃未确认的自定义预览
+      return;
+    }
+    pickerDraft = null;
+  }
+
+  function openColorMenu() {
+    if (!colorMenuEl) return;
+    // 每次打开都回到已保存的配色，避免上一次「自定义」的未确认预览残留
+    applyTheme();
+    const picker = colorMenuEl.querySelector(".qq7-picker");
+    if (picker) picker.hidden = true;
+    pickerDraft = null;
+    syncColorMenuState();
+    colorMenuEl.hidden = false;
+    if (colorBtnEl) colorBtnEl.setAttribute("aria-expanded", "true");
+  }
+
+  function selectPreset(id) {
+    if (id === "custom") {
+      const picker = colorMenuEl && colorMenuEl.querySelector(".qq7-picker");
+      if (picker) {
+        picker.hidden = false;
+        picker.innerHTML = pickerHtml();
+        pickerDraft = { hue: readTheme().custom ? readTheme().hue : HUE_BASE, light: readTheme().custom ? (readTheme().light || 0) : 0 };
+      }
+      return;
+    }
+    const item = COLOR_ITEMS.find((entry) => entry.id === id);
+    if (!item) return;
+    const theme = id === "restore" || id === "sky"
+      ? { hue: HUE_BASE, light: 0, custom: false }
+      : { hue: item.hue, light: 0, custom: true };
+    saveTheme(theme);
+    applyTheme(theme);
+    syncColorMenuState();
+    closeColorMenu();
+  }
+
+  function syncColorMenuState() {
+    if (!colorMenuEl) return;
+    const list = colorMenuEl.querySelector(".qq7-colormenu-list");
+    if (!list) return;
+    list.innerHTML = colorMenuHtml();
+  }
+
+  function wireColorButton(host) {
+    colorBtnEl = host;
+    colorMenuEl = document.createElement("div");
+    colorMenuEl.className = "qq7-colormenu";
+    colorMenuEl.hidden = true;
+    colorMenuEl.setAttribute("role", "menu");
+    colorMenuEl.innerHTML = `<div class="qq7-colormenu-list">${colorMenuHtml()}</div><div class="qq7-picker" hidden></div>`;
+    root.appendChild(colorMenuEl);
+
+    colorBtnEl.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (colorMenuEl.hidden) openColorMenu(); else closeColorMenu();
+    });
+
+    colorMenuEl.addEventListener("click", (event) => {
+      const item = event.target.closest && event.target.closest("[data-color]");
+      if (item) { selectPreset(item.dataset.color); return; }
+      const action = event.target.closest && event.target.closest("[data-picker]");
+      if (!action) return;
+      event.preventDefault();
+      if (action.dataset.picker === "cancel") {
+        const picker = colorMenuEl.querySelector(".qq7-picker");
+        if (picker) picker.hidden = true;
+        pickerDraft = null;
+        // 取消必须把实时预览退回到已保存的配色，否则界面会停在未确认的颜色上
+        applyTheme();
+        return;
+      }
+      if (action.dataset.picker === "ok" && pickerDraft) {
+        saveTheme({ hue: pickerDraft.hue, light: pickerDraft.light, custom: true });
+        applyTheme({ hue: pickerDraft.hue, light: pickerDraft.light, custom: true });
+        syncColorMenuState();
+        closeColorMenu();
+      }
+    });
+
+    colorMenuEl.addEventListener("input", (event) => {
+      const input = event.target;
+      if (!input || !input.classList) return;
+      if (!pickerDraft) return;
+      if (input.classList.contains("qq7-hue")) {
+        pickerDraft.hue = Number(input.value);
+        const tag = colorMenuEl.querySelector("[data-hue-val]");
+        if (tag) tag.textContent = pickerDraft.hue + "°";
+      } else if (input.classList.contains("qq7-light")) {
+        pickerDraft.light = Number(input.value);
+        const tag = colorMenuEl.querySelector("[data-light-val]");
+        if (tag) tag.textContent = (pickerDraft.light > 0 ? "+" : "") + pickerDraft.light + "%";
+      }
+      // 实时预览（不落盘，取消即丢弃）
+      if (themeStyleEl) {
+        const delta = pickerDraft.hue - HUE_BASE;
+        if (!delta && !pickerDraft.light) themeStyleEl.textContent = "";
+        else {
+          const rules = [];
+          const light = pickerDraft.light / 100;
+          for (const token of SKIN_TOKENS) rules.push("--qq7-c-" + token + ":" + rotateToken(token, pickerDraft.hue, light));
+          themeStyleEl.textContent = ":root{" + rules.join(";") + "}";
+        }
+      }
+    });
+
+    colorMenuEl.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") { closeColorMenu(); }
+    });
+    colorMenuEl.addEventListener("mousedown", (event) => event.stopPropagation());
+    // 点空白处关闭（QQ2007 菜单也是点别处收起）
+    document.addEventListener("pointerdown", (event) => {
+      if (colorMenuEl.hidden) return;
+      if (colorMenuEl.contains(event.target) || colorBtnEl.contains(event.target)) return;
+      closeColorMenu();
+    }, true);
   }
 
   function start() {

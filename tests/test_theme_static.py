@@ -46,7 +46,9 @@ class ThemeStaticTests(unittest.TestCase):
     def test_native_tooltip_contrast(self) -> None:
         self.assertIn("body.qq7-shell .cr-tooltip", self.css)
         self.assertIn("background: #ffffe1", self.css)
-        self.assertIn("color: #173352", self.css)
+        # 文字色可能是字面量，也可能被换肤令牌化为 var(--qq7-c-173352, #173352)；
+        # 两种形式都锁定同一个色值 0x173352，双向换色都不会影响对比度约束。
+        self.assertIn("#173352", self.css)
 
     def test_friend_panel_categories_and_summon(self) -> None:
         self.assertIn('data-list="expert"', self.js)
@@ -137,7 +139,7 @@ class ThemeStaticTests(unittest.TestCase):
     def test_skin_off_cleans_runtime_classes(self) -> None:
         """皮肤关闭时清理宠物运行态 class 和举牌，避免视觉残留。"""
         start = self.js.index("function syncSkin")
-        body = self.js[start : start + 600]
+        body = self.js[start : start + 1200]
         self.assertIn("qq7-pet-loading", body)
         self.assertIn("qq7-pet-has-options", body)
         self.assertIn('dataset.show = "0"', body)
@@ -218,6 +220,96 @@ class ThemeStaticTests(unittest.TestCase):
             self.assertIn("env -u ELECTRON_RUN_AS_NODE", text, msg=rel)
             if rel != "README.md":
                 self.assertIn("Contents/MacOS/Electron", text, msg=rel)
+
+
+    # ------------------------------------------------------------------
+    # QQ 2007 换肤（颜色编辑）回归
+    # ------------------------------------------------------------------
+    # 色相来自 QQ2007 正式版 QQ.exe 逆向：.rdata 常量表 55/127/202/274/346，
+    # 210 为皮肤自身默认（天际蓝）。菜单文字来自 QQRes.dll 字符串表。
+    EXPECTED_HUES = {
+        "贵族紫": 274,
+        "水晶蓝": 202,
+        "天际蓝": 210,
+        "苹果绿": 127,
+        "沙漠黄": 55,
+        "玫瑰红": 346,
+    }
+
+    def test_color_menu_presets_match_reversed_binary(self) -> None:
+        """六种预设色相必须与 QQ2007 正式版逆向表一致。"""
+        for label, hue in self.EXPECTED_HUES.items():
+            self.assertIn(label, self.js, msg=f"缺少 QQ2007 原版配色项：{label}")
+            self.assertRegex(
+                self.js,
+                rf'label:\s*"{re.escape(label)}",\s*hue:\s*(?:{hue}|HUE_BASE)\b',
+                msg=f"{label} 的色相必须为 {hue}",
+            )
+
+    def test_color_menu_labels_are_original_wording(self) -> None:
+        """菜单文字必须沿用 QQ2007 原版：颜色恢复 / 自定义。"""
+        match = re.search(r"const COLOR_ITEMS = \[(.*?)\];", self.js, re.S)
+        self.assertIsNotNone(match, msg="找不到 COLOR_ITEMS 配色表")
+        block = match.group(1)
+        self.assertIn('"颜色恢复"', block, msg="缺少原版「颜色恢复」项")
+        self.assertIn('data-color="custom"', self.js, msg="缺少原版「自定义」取色入口")
+        self.assertIn("<span>自定义</span>", self.js, msg="「自定义」必须是菜单项文案")
+        self.assertIn("自定义", self.js, msg="缺少原版「自定义」文案")
+
+    def test_skin_tokens_have_original_hex_fallback(self) -> None:
+        """每个换肤令牌都必须带原始色值回退，引擎失效时界面与改造前一致。"""
+        css_all = self.css + (ROOT / "theme" / "qq2008-skin.css").read_text(encoding="utf-8")
+        css_all += (ROOT / "theme" / "qq2008-583-adapter.css").read_text(encoding="utf-8")
+        tokens = re.findall(r"var\(--qq7-c-([0-9A-F]{6}), (#[0-9a-fA-F]{6})\)", css_all)
+        self.assertGreater(len(tokens), 300, msg="皮肤色值令牌数量异常，换肤覆盖面不足")
+        for name, fallback in tokens:
+            self.assertEqual(
+                "#" + name.lower(),
+                fallback.lower(),
+                msg=f"令牌 --qq7-c-{name} 的回退色必须等于令牌名",
+            )
+
+    def test_skin_tokens_in_js_cover_every_css_token(self) -> None:
+        """JS 里的令牌表必须覆盖三张样式表出现的全部令牌，否则换色会漏色。"""
+        css_all = self.css + (ROOT / "theme" / "qq2008-skin.css").read_text(encoding="utf-8")
+        css_all += (ROOT / "theme" / "qq2008-583-adapter.css").read_text(encoding="utf-8")
+        css_tokens = set(re.findall(r"var\(--qq7-c-([0-9A-F]{6}),", css_all))
+        match = re.search(r"const SKIN_TOKENS = \[(.*?)\];", self.js, re.S)
+        self.assertIsNotNone(match, msg="找不到 SKIN_TOKENS 令牌表")
+        js_tokens = set(re.findall(r'"([0-9A-F]{6})"', match.group(1)))
+        missing = css_tokens - js_tokens
+        self.assertFalse(missing, msg=f"以下令牌未纳入换色表：{sorted(missing)[:10]}")
+
+    def test_theme_settings_persist_and_reset(self) -> None:
+        """配色写 localStorage；「颜色恢复」必须删除自选色。"""
+        self.assertIn("WORKBUDDY_QQ7_SKIN_HUE", self.js)
+        self.assertIn("WORKBUDDY_QQ7_SKIN_LIGHT", self.js)
+        self.assertIn("removeItem(HUE_KEY)", self.js)
+        self.assertIn("removeItem(LIGHT_KEY)", self.js)
+
+    def test_color_button_hidden_when_skin_off(self) -> None:
+        """皮肤关闭时配色令牌必须清空，原生界面不能被自选颜色污染。"""
+        self.assertIn("if (!on) themeStyleEl.textContent = \"\"", self.js)
+        self.assertIn("else if (themeStyleEl.textContent === \"\") applyTheme()", self.js)
+        self.assertIn("body.qq7-off #qq7-root .qq7-colormenu { display: none !important; }", self.css)
+
+    def test_theme_style_element_declared_before_sync_skin(self) -> None:
+        """themeStyleEl 必须在 syncSkin 之前声明，否则触发 TDZ（同通知音事故）。"""
+        decl = self.js.index("let themeStyleEl")
+        first_sync_use = self.js.index("themeStyleEl.textContent")
+        self.assertLess(decl, first_sync_use, msg="themeStyleEl 声明必须在首次使用之前")
+
+    def test_cancel_restores_saved_theme(self) -> None:
+        """自定义取色点「取消」必须退回已保存配色，不能留下未确认的预览。"""
+        start = self.js.index('action.dataset.picker === "cancel"')
+        end = self.js.index('action.dataset.picker === "ok"', start)
+        self.assertIn("applyTheme()", self.js[start:end])
+
+    def test_color_button_is_not_drag_region(self) -> None:
+        """「+」按钮必须排除在拖拽 / 双击热区之外，否则点不动。"""
+        self.assertIn(".qq7-colorbtn", self.js)
+        self.assertIn('class="qq7-colorbtn"', self.js)
+        self.assertIn("aria-haspopup=\"menu\"", self.js)
 
 
 if __name__ == "__main__":

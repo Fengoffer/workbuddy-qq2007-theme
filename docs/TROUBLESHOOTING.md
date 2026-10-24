@@ -75,6 +75,29 @@ bash scripts/macos/uninstall.sh --restore-asar ~/WorkBuddy/QQ2007ThemeBackups/<�
 ### 通知音不是 QQ 滴滴
 WorkBuddy 升级后可能改了通知音路径。当前只拦截 `sounds/*.wav`、`audio.src`、`Audio`、`fetch` 等路径；如失效请提 Issue 并附新版本号。
 
+### 点了标题栏「+」没反应 / 菜单不出来
+
+「+」是颜色编辑按钮，属于 1.3.0 新增功能。
+
+1. 确认版本：安装目录里 `grep -c qq7-colorbtn theme/qq2007-chrome.js` 应大于 0；
+2. 确认注入生效：点一下窗口任意处让主题重新初始化，或按 `Cmd+R` 刷新；
+3. 皮肤关闭时按钮会随外壳隐藏，这是正常行为（先点菜单栏「原版」切回主题）。
+
+### 换色后只有部分界面变色 / 颜色发灰
+
+主题用 CSS 变量令牌（`--qq7-c-XXXXXX`）驱动换色，令牌名就是原始色值。
+如果部分区域没变色，通常是该处写死了字面色值，需要在样式表里改成
+`var(--qq7-c-XXXXXX, #原色值)` 形式。这是维护问题，请提 Issue 附截图。
+
+### 换色后想恢复默认蓝色
+
+点颜色菜单第一项「颜色恢复」即可；或清掉存储：
+
+```js
+localStorage.removeItem('WORKBUDDY_QQ7_SKIN_HUE');
+localStorage.removeItem('WORKBUDDY_QQ7_SKIN_LIGHT');
+```
+
 ### 通知音有两声
 已做过 900ms 去重和原生通知静音。如果仍有两声，可能是 macOS 系统通知声音：到「系统设置 → 通知 → WorkBuddy」关闭声音。
 
