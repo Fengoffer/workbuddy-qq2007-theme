@@ -144,9 +144,26 @@ def main() -> int:
                 errors.append(f"{rel} 疑似包含{label}")
 
     # 5. 版本一致性
+    #
+    # 支持两种顶部标题：
+    #   ## 1.3.15 (2026-10-24)   已发布版本 —— 安装器 themeVersion 必须等于它
+    #   ## Unreleased            累积中的未发布改动 —— 安装器保持上一个已发布版本
+    #
+    # 约定：纯文档 / CI 改动不发版，先累积到 Unreleased；只有功能或缺陷修复才发版。
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    version_match = re.search(r"^##\s+(\d+\.\d+\.\d+)", changelog, re.MULTILINE)
-    latest_version = version_match.group(1) if version_match else None
+    first_heading = re.search(r"^##\s+(.+)$", changelog, re.MULTILINE)
+    top_is_unreleased = bool(first_heading and first_heading.group(1).strip() == "Unreleased")
+    if top_is_unreleased:
+        # 顶部是 Unreleased：安装器版本取"下面第一个已发布版本"，作为当前发布版本
+        released = re.search(r"^##\s+(\d+\.\d+\.\d+)\s+\(", changelog, re.MULTILINE)
+        latest_version = released.group(1) if released else None
+        if latest_version is None:
+            errors.append("CHANGELOG.md 顶部是 Unreleased，但其下找不到任何已发布版本标题")
+    else:
+        version_match = first_heading and re.fullmatch(r"(\d+\.\d+\.\d+)\s+\(\d{4}-\d{2}-\d{2}\)", first_heading.group(1).strip())
+        latest_version = version_match.group(1) if version_match else None
+        if latest_version is None:
+            errors.append("CHANGELOG.md 顶部标题应为 `## X.Y.Z (YYYY-MM-DD)` 或 `## Unreleased`")
     # 版本标题必须严格是 `## X.Y.Z (YYYY-MM-DD)`，防止 1.0.5 (date) (date) 这类笔误
     for heading in re.finditer(r"^##\s+(\d+\.\d+\.\d+)(.*)$", changelog, re.MULTILINE):
         if not re.fullmatch(r" \(\d{4}-\d{2}-\d{2}\)", heading.group(2).rstrip()):
@@ -154,9 +171,7 @@ def main() -> int:
             errors.append(
                 f"CHANGELOG.md 第 {line} 行版本标题格式应为 `## X.Y.Z (YYYY-MM-DD)`：{heading.group(0).strip()}"
             )
-    if latest_version is None:
-        errors.append("CHANGELOG.md 中找不到形如 `## 1.2.3` 的最新版本标题")
-    else:
+    if latest_version is not None:
         for rel in INSTALLERS:
             text = (ROOT / rel).read_text(encoding="utf-8")
             match = re.search(r'themeVersion"?\s*[:=]\s*"([0-9]+\.[0-9]+\.[0-9]+)"', text)
@@ -164,12 +179,13 @@ def main() -> int:
                 errors.append(f"{rel} 中找不到 themeVersion 版本号")
             elif match.group(1) != latest_version:
                 errors.append(
-                    f"版本不一致：{rel} 的 themeVersion={match.group(1)}，CHANGELOG 最新版本={latest_version}"
+                    f"版本不一致：{rel} 的 themeVersion={match.group(1)}，"
+                    f"CHANGELOG 最新已发布版本={latest_version}"
                 )
 
     # 5b. 版本链条自检：CHANGELOG 顶部版本必须有对应 tag，且指向某个提交。
     # 只提示不报错：CI 也在未发布的分支上运行，此时 tag 合法地不存在。
-    if latest_version is not None:
+    if latest_version is not None and not top_is_unreleased:
         tag_name = f"v{latest_version}"
         tag_check = subprocess.run(
             ["git", "rev-parse", "--verify", "--quiet", f"refs/tags/{tag_name}"],
