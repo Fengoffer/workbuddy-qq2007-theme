@@ -72,6 +72,88 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("pointer-events: none", self.css)
         self.assertIn("cr-tooltip--placement-bottom", self.css)
 
+    def test_notify_sound_url_declared_before_use(self) -> None:
+        """installNotificationSound 里 QQ_SOUND_URL 必须先声明后使用。
+
+        曾经的 bug：const QQ_SOUND_URL 声明在 new Audio(QQ_SOUND_URL) 之后，
+        TDZ ReferenceError 被 try/catch 吞掉，qqNotify 恒为 null，
+        整个通知音替换功能自 v1.0.0 起静默失效。
+        """
+        start = self.js.index("function installNotificationSound")
+        end = self.js.index("function start()", start)
+        body = self.js[start:end]
+        # 用真实代码语句定位首次使用（注释里也会出现该标识符，不能算使用）
+        first_use = body.index("qqNotify = new Audio(QQ_SOUND_URL)")
+        first_decl = body.index("const QQ_SOUND_URL")
+        self.assertLess(
+            first_decl,
+            first_use,
+            msg="QQ_SOUND_URL 声明必须在首次使用之前（TDZ），否则通知音替换静默失效",
+        )
+        self.assertIn("qqNotify = new Audio(QQ_SOUND_URL)", body)
+
+    def test_summon_success_path_resets_button(self) -> None:
+        """召唤成功路径必须复位按钮，不能只依赖 refreshFriendData。"""
+        self.assertIn("resetSummonButton", self.js)
+        start = self.js.index("async function summonFriendExpert")
+        end = self.js.index("function friendPanelHtml", start)
+        body = self.js[start:end]
+        prepare = body.index("prepareInput(payload)")
+        self.assertIn("resetSummonButton(button, original", body[prepare:])
+
+    def test_account_name_escaped_in_innerhtml(self) -> None:
+        """账号名进入 innerHTML 前必须转义，防止昵称含 HTML 造成注入。"""
+        self.assertIn("${escapeHtml(name)}", self.js)
+        self.assertIn("${escapeHtml(displayName())}", self.js)
+        self.assertNotIn("${name}</b>", self.js)
+        self.assertNotIn("${displayName()}</b>", self.js)
+
+    def test_friend_render_cap_consistent(self) -> None:
+        """渲染截断后行数口径必须明确：rendered=实际渲染数（键盘/筛选用），total=数据源总数。"""
+        self.assertIn("FRIEND_RENDER_CAP", self.js)
+        self.assertIn("list.dataset.rendered", self.js)
+        self.assertIn("list.dataset.total", self.js)
+        self.assertIn("friendCountText(visible.length, rendered, total)", self.js)
+        self.assertNotIn("items.slice(0, 200)", self.js)
+
+    def test_keyboard_rows_use_hidden_flag(self) -> None:
+        """键盘导航与筛选同口径：用 row.hidden 而不是 offsetParent。"""
+        self.assertNotIn("row.offsetParent", self.js)
+
+    def test_notify_volume_follows_shared_config(self) -> None:
+        """替换通知音的音量/开关与 qq2008-notify.js 共用同一 localStorage 配置。"""
+        self.assertIn("WORKBUDDY_QQ2008_TASK_SOUND_VOLUME", self.js)
+        self.assertIn("WORKBUDDY_QQ2008_SKIN_ENABLED", self.js)
+
+    def test_notification_wrapper_keeps_statics(self) -> None:
+        """Notification 包装必须保留静态属性，否则 requestPermission() 直接 TypeError。"""
+        self.assertIn("WrappedNotification.requestPermission = NativeNotification.requestPermission", self.js)
+        self.assertIn('"permission", "maxActions"', self.js)
+
+    def test_notify_replay_respects_config(self) -> None:
+        """replay 走 playQQ(true)：跳过去重但尊重音量/开关配置。"""
+        self.assertIn("{ replay: () => playQQ(true) }", self.js)
+
+    def test_skin_off_cleans_runtime_classes(self) -> None:
+        """皮肤关闭时清理宠物运行态 class 和举牌，避免视觉残留。"""
+        start = self.js.index("function syncSkin")
+        body = self.js[start : start + 600]
+        self.assertIn("qq7-pet-loading", body)
+        self.assertIn("qq7-pet-has-options", body)
+        self.assertIn('dataset.show = "0"', body)
+
+    def test_friend_signature_covers_guard_fields(self) -> None:
+        """列表签名必须包含 canSummon/blockedLabel，否则 guard 迟到时 UI 不同步。"""
+        self.assertIn("e.canSummon ? 1 : 0", self.js)
+        self.assertIn("e.blockedLabel", self.js)
+
+    def test_enter_key_always_stops_propagation(self) -> None:
+        """列表 Enter 无论行是否可召唤都要阻止冒泡，避免触发 App 全局快捷键。"""
+        start = self.js.index('event.key === "Enter"')
+        zone = self.js[start : self.js.index('event.key === "Escape"', start)]
+        self.assertLess(zone.index("preventDefault"), zone.index("if (summon)"))
+        self.assertIn("stopPropagation", zone)
+
     def test_friend_panel_dynamic_data_hooks(self) -> None:
         self.assertIn("refreshFriendData", self.js)
         self.assertIn("qq7-friend-list", self.js)

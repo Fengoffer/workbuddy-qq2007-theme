@@ -509,18 +509,23 @@ body.qq7-shell .workbuddy-topbar-actions svg {
   color: #2a6491 !important;
 }
 
-/* 聊天窗口主体：白色凹陷面板 */
-body.qq7-shell .conversation-page-chrome,
-body.qq7-shell .conversation-page-chrome__content,
-body.qq7-shell .conversation-page-chrome__shell,
-body.qq7-shell .conversation-shell,
-body.qq7-shell .conversation-shell__main {
+/* 会话/首页白底面板。必须带 #root 前缀：qq2008-583-adapter.css 用
+   `#root .teams-container [data-view-id="main-content"]`（ID + 属性选择器）铺了
+   蓝白渐变，单类选择器压不过它，导致输入框左右两侧各露出约 220px 浅蓝渐变
+   （输入区宽 838px，容器宽 1290px）。这里把中间三层连同 __main 一起铺白。 */
+body.qq7-shell #root .conversation-page-chrome,
+body.qq7-shell #root .conversation-page-chrome__content,
+body.qq7-shell #root .conversation-page-chrome__shell,
+body.qq7-shell #root .conversation-shell,
+body.qq7-shell #root .conversation-shell__main,
+body.qq7-shell #root .wb-home-route {
   background: #fff !important;
+  background-image: none !important;
 }
 
-body.qq7-shell .conversation-shell,
-body.qq7-shell .wb-home-route {
-  background: #fff !important;
+/* 外层 shell 保留 1px 边框，做出 XP 凹陷窗口质感 */
+body.qq7-shell #root .conversation-shell,
+body.qq7-shell #root .wb-home-route {
   border: 1px solid var(--qq7-line) !important;
   box-shadow: inset 1px 1px 0 #fff !important;
   margin: 3px 4px 3px 3px !important;
@@ -572,26 +577,33 @@ body.qq7-shell pre {
   border-radius: 2px !important;
 }
 
-/* 输入区：3D 凹陷输入框 + 工具条 */
-body.qq7-shell .conversation-input-area {
-  background: linear-gradient(180deg, #eef8ff, #e2f1fc) !important;
-  border-top: 1px solid var(--qq7-line) !important;
-  box-shadow: inset 0 1px #fff !important;
+/* 输入区：容器必须自己铺白底，且选择器特异性要压过 qq2008-583-adapter.css 里的
+   `#root .conversation-input-area { background-color: transparent !important }`。
+   ID 选择器的特异性高于单类，所以这里用 `body.qq7-shell #root` 双前缀 +
+   !important 才能在层叠中胜出；否则容器保持透明，周围内边距会透出 #root 的
+   浅蓝底色 rgb(220,238,249)，看起来像「输入框背后有一块蓝色色块」。 */
+body.qq7-shell #root .conversation-input-area {
+  background: #fff !important;
+  background-image: none !important;
+  border-top: 0 !important;
+  box-shadow: none !important;
   padding: 3px 4px 2px !important;
 }
 
-body.qq7-shell .conversation-input-area__input-stack { background: transparent !important; }
+body.qq7-shell #root .conversation-input-area__input-stack { background: transparent !important; }
 
-body.qq7-shell .cr-input-container {
+body.qq7-shell #root .cr-input-container {
   border: 1px solid #7f9db9 !important;
   border-radius: 2px !important;
   background: #fff !important;
   box-shadow: inset 1px 1px 2px rgba(120, 150, 180, .22) !important;
 }
 
-body.qq7-shell .cr-input-toolbar {
-  border-top: 1px solid #c3d8e8 !important;
-  background: linear-gradient(180deg, #fbfeff, #eaf5ff) !important;
+/* 工具条同为白底、不画分隔线（此前的浅蓝渐变 + 分隔线是第二处视觉噪音） */
+body.qq7-shell #root .cr-input-toolbar {
+  border-top: 0 !important;
+  background: #fff !important;
+  background-image: none !important;
   border-radius: 0 !important;
   padding-top: 6px !important;
   padding-bottom: 6px !important;
@@ -1308,6 +1320,12 @@ body.qq7-shell .qq7-pet-sign-stick {
 }
 
 /* ---------- 12. QQ 宠物：Ruffle 播放真实 QQ 宠物 SWF ---------- */
+/* 舞台是 244×244 的方框，SWF 内容只占其中下半部分。translateY 决定企鹅
+   相对输入框上沿的落点：
+   - -72%（旧值）企鹅悬空，脚底距输入框上沿 25~26px，看着「离得远」；
+   - -54% 让企鹅双脚正好踩在输入框上沿（首页 -1px、会话页 9px），
+     至于会话页「下半身藏在输入框后面」原本就是设计意图。
+   两页共用同一个值，避免首页 / 会话页视觉不一致。 */
 body.qq7-shell .qq7-pet-stage {
   display: block !important;
   position: absolute;
@@ -1315,7 +1333,7 @@ body.qq7-shell .qq7-pet-stage {
   top: 50%;
   width: 244px;
   height: 244px;
-  transform: translate(-50%, -72%);
+  transform: translate(-50%, -54%);
   opacity: 0;
   pointer-events: none;
   transition: opacity .25s ease;

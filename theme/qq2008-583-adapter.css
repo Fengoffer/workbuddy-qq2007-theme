@@ -15,7 +15,10 @@
   background-image: linear-gradient(135deg, #e6f4fc 0%, #fbfdff 46%, #eef8fd 100%) !important;
 }
 
-/* 中间层一律透明，让上面的主题渐变透出来 */
+/* 中间层一律透明，让上面的主题渐变透出来。
+   注意：.conversation-input-area 不在此列表中——它必须自己铺白底，
+   否则周围内边距会透出 #root 的浅蓝底色，看起来像输入框背后有色块。
+   （该元素的背景由 qq2007-chrome.css 用 body.qq7-shell #root 前缀覆盖） */
 #root .teams-content-wrapper,
 #root .teams-main-content,
 #root .wb-home-route,
@@ -26,7 +29,6 @@
 #root .conversation-page-chrome__shell,
 #root .conversation-shell,
 #root .conversation-shell__main,
-#root .conversation-input-area,
 #root .conversation-input,
 #root .conversation-input-area__input-stack,
 .cr-theme,

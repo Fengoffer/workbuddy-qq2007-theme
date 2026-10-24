@@ -51,6 +51,12 @@
     document.body.classList.toggle("qq7-shell", on);
     document.body.classList.toggle("qq7-off", !on);
     if (root) root.style.display = on ? "" : "none";
+    if (!on) {
+      // 皮肤关闭时清掉运行态 class，避免残留的「加载中」占位图 / 举牌动画
+      document.body.classList.remove("qq7-pet-loading", "qq7-pet-has-options", "qq7-panel-open");
+      const sign = document.getElementById("qq7-root")?.querySelector(".qq7-pet-sign");
+      if (sign) sign.dataset.show = "0";
+    }
   }
 
   const ACCOUNT_NAME_SELECTORS = [
@@ -357,12 +363,25 @@
     };
   }
 
+  /* 单个分组最多渲染的行数：超出部分截断。
+     dataset.rendered = 实际渲染行数（键盘/筛选以此为准，与 DOM 一致）；
+     dataset.total = 数据源总行数（仅用于超限时显示「渲染数/总数」）。 */
+  const FRIEND_RENDER_CAP = 200;
+
+  /* 分组计数文案：无筛选时，超限显示 (渲染数/总数)，否则 (数量)；
+     有筛选时显示 (可见数/渲染数)。 */
+  function friendCountText(visible, rendered, total) {
+    if (total > rendered) return `(${rendered}/${total})`;
+    return `(${visible})`;
+  }
+
   function renderFriendGroup(key, items, emptyText) {
     const list = root && root.querySelector(`.qq7-friend-list[data-list="${key}"]`);
     const count = root && root.querySelector(`.qq7-group-count[data-count="${key}"]`);
     if (!list) return;
+    const rendered = Math.min(items.length, FRIEND_RENDER_CAP);
     list.dataset.total = String(items.length);
-    if (count) count.textContent = `(${items.length})`;
+    list.dataset.rendered = String(rendered);
     const scrollTop = list.scrollTop;
     if (!items.length) {
       list.innerHTML = `<div class="qq7-friend-empty">${escapeHtml(emptyText)}</div>`;
@@ -370,8 +389,7 @@
       applyFriendFilter();
       return;
     }
-    list.dataset.total = String(items.length);
-    list.innerHTML = items.slice(0, 200).map((item, index) => {
+    list.innerHTML = items.slice(0, FRIEND_RENDER_CAP).map((item, index) => {
       const avatar = item.avatar
         ? `<img src="${escapeHtml(item.avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
         : "";
@@ -424,9 +442,11 @@
     root.querySelectorAll(".qq7-friend-list").forEach((list) => {
       const rows = [...list.querySelectorAll(".qq7-friend-row")];
       const visible = rows.filter((row) => !row.hidden);
-      const total = Number(list.dataset.total || rows.length);
+      // rendered 与实际渲染行数一致；total 是数据源总数（超限截断时两者不同）
+      const rendered = Number(list.dataset.rendered || rows.length);
+      const total = Number(list.dataset.total || rendered);
       const count = root.querySelector(`.qq7-group-count[data-count="${list.dataset.list}"]`);
-      if (count) count.textContent = query ? `(${visible.length}/${total})` : `(${total})`;
+      if (count) count.textContent = query ? `(${visible.length}/${rendered})` : friendCountText(visible.length, rendered, total);
       if (document.activeElement !== list || !visible.length) return;
       const current = visible.find((row) => row.classList.contains("is-keyboard-active"));
       setFriendActive(list, current || visible[0]);
@@ -490,7 +510,11 @@
       } catch (error) {}
     }
     if (seq !== friendRefreshSeq) return;
-    const signature = `${[...experts.keys()].join("|")}::${[...skills.keys()].join("|")}`;
+    // 签名必须覆盖影响渲染的字段：id 之外还有 canSummon / blockedLabel——
+    // 否则 catalog 迟到时（如 recents 先渲染了团队专家的召唤按钮），
+    // guard 数据更新但签名不变，列表不会重渲染，禁召唤标记不会出现。
+    const signature = [...experts.values()].map((e) => `${e.id}:${e.canSummon ? 1 : 0}:${e.blockedLabel || ""}`).join("|")
+      + "::" + [...skills.keys()].join("|");
     if (signature === lastFriendSignature) return;
     lastFriendSignature = signature;
     renderFriendGroup("expert", [...experts.values()], "暂无 WorkBuddy 专家");
@@ -545,19 +569,27 @@
       }
       await window.wb.conversations.prepareInput(payload);
       if (window.wb.navigation?.goto) window.wb.navigation.goto("/");
+      // 成功路径也要复位按钮：refreshFriendData 在列表签名未变时不重建 DOM，
+      // 不主动恢复的话按钮会永久停在「召唤中…」并保持 disabled。
+      resetSummonButton(button, original, "召唤成功", 600);
       window.setTimeout(refreshFriendData, 800);
     } catch (error) {
       console.warn("[QQ7] summon expert failed", error);
-      if (button.isConnected) {
-        button.textContent = "召唤失败";
-        window.setTimeout(() => {
-          if (!button.isConnected) return;
-          button.disabled = false;
-          button.textContent = original;
-          delete button.dataset.summoning;
-        }, 1200);
-      }
+      resetSummonButton(button, original, "召唤失败", 1200);
     }
+  }
+
+  /* 把召唤按钮从「召唤中…」恢复为可用：先短暂显示结果文案，再复位；
+     按钮若已被列表重建替换（脱离文档）则直接跳过，不影响新按钮。 */
+  function resetSummonButton(button, original, doneText, delay) {
+    if (!button.isConnected) return;
+    button.textContent = doneText;
+    window.setTimeout(() => {
+      if (!button.isConnected) return;
+      button.disabled = false;
+      button.textContent = original;
+      delete button.dataset.summoning;
+    }, delay);
   }
 
   function friendPanelHtml() {
@@ -603,7 +635,7 @@
           <div class="qq7-group-title"><span class="qq7-caret">▼</span>环境信息</div>
           <div class="qq7-info-row"><span>客户端</span><b>WorkBuddy 5.8.3</b></div>
           <div class="qq7-info-row"><span>皮肤</span><b>QQ 2007 (深度仿制)</b></div>
-          <div class="qq7-info-row"><span>账号</span><b class="qq7-account-name">${name}</b></div>
+          <div class="qq7-info-row"><span>账号</span><b class="qq7-account-name">${escapeHtml(name)}</b></div>
           <div class="qq7-info-row"><span>状态</span><b>在线</b></div>
         </div>
         <div class="qq7-group">
@@ -733,7 +765,7 @@
       <div class="qq7-statusbar">
         <span class="qq7-status-left">
           ${icon(12)}
-          <b class="qq7-account-name">${displayName()}</b> LV07
+          <b class="qq7-account-name">${escapeHtml(displayName())}</b> LV07
           <span>在线</span>
           <span class="qq7-status-quote">别迷恋姐，姐只是个传说。</span>
         </span>
@@ -797,7 +829,9 @@
     root.addEventListener("keydown", (event) => {
       const list = event.target.closest && event.target.closest(".qq7-friend-list");
       if (!list) return;
-      const rows = [...list.querySelectorAll(".qq7-friend-row")].filter((row) => row.offsetParent !== null);
+      // 与 applyFriendFilter 同口径：用 row.hidden 判断可见性，
+      // 避免 offsetParent 在 position:fixed 等布局下返回 null 造成误判。
+      const rows = [...list.querySelectorAll(".qq7-friend-row")].filter((row) => !row.hidden);
       if (!rows.length) return;
       let active = rows.findIndex((row) => row.classList.contains("is-keyboard-active"));
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -809,10 +843,11 @@
       } else if (event.key === "Enter") {
         if (active < 0) active = 0;
         const summon = rows[active] && rows[active].querySelector(".qq7-friend-summon");
-        if (summon) {
-          event.preventDefault();
-          summonFriendExpert(summon);
-        }
+        // 无论该行是否可召唤都阻止默认/冒泡：技能行按 Enter 不应再触发
+        // App 的全局快捷键（事件会从 list 冒泡到 document）。
+        event.preventDefault();
+        event.stopPropagation();
+        if (summon) summonFriendExpert(summon);
       } else if (event.key === "Escape") {
         list.blur();
       }
@@ -1980,7 +2015,22 @@
     if (window.__qq7NotifySoundHooked) return;
     window.__qq7NotifySoundHooked = true;
     const APP_SOUND = /\/sounds\/[^/]+\.wav(?:[?#]|$)/i;
+    // 必须先于 new Audio(QQ_SOUND_URL) 声明，否则 TDZ ReferenceError 会被
+    // 下面的 catch 吞掉，qqNotify 恒为 null，整个通知音替换静默失效。
+    const QQ_SOUND_URL = new URL("qq-message.wav", QQ7_ASSET_BASE).href;
     let qqNotify = null;
+    // 与 qq2008-notify.js 的任务音量保持同源：读取同一 localStorage 键，
+    // 皮肤开关关闭时两个声音系统一起静音，音量设置对两者同时生效。
+    const readNotifyVolume = () => {
+      try {
+        if (localStorage.getItem("WORKBUDDY_QQ2008_SKIN_ENABLED") === "false") return -1;
+        if (localStorage.getItem("WORKBUDDY_QQ2008_TASK_SOUND_ENABLED") === "false") return -1;
+        const raw = Number(localStorage.getItem("WORKBUDDY_QQ2008_TASK_SOUND_VOLUME"));
+        return Number.isFinite(raw) && raw >= 0 && raw <= 1 ? raw : 0.9;
+      } catch (error) {
+        return 0.9;
+      }
+    };
     try {
       qqNotify = new Audio(QQ_SOUND_URL);
       qqNotify.dataset.qq7Own = "1";
@@ -1989,16 +2039,18 @@
     } catch (error) {
       qqNotify = null;
     }
-    const QQ_SOUND_URL = new URL("qq-message.wav", QQ7_ASSET_BASE).href;
     let lastQQAt = 0;
     const playQQ = (force) => {
       if (!qqNotify) return false;
       const now = Date.now();
       if (!force && now - lastQQAt < 900) return false;
-      lastQQAt = now;
       try {
+        const volume = readNotifyVolume();
+        if (volume < 0) return false; // 皮肤或声音开关已关闭；不消耗 900ms 去重窗口
+        qqNotify.volume = volume;
         qqNotify.currentTime = 0;
         qqNotify.play().catch(() => {});
+        lastQQAt = now; // 只在真正发声时更新，静音期间不占用去重窗口
         return true;
       } catch (error) {
         return false;
@@ -2116,6 +2168,17 @@
         };
         WrappedNotification.prototype = NativeNotification.prototype;
         Object.setPrototypeOf(WrappedNotification, NativeNotification);
+        // 保留静态属性/方法（permission / requestPermission / maxActions），
+        // 否则 App 调 Notification.requestPermission() 会直接 TypeError。
+        for (const key of ["permission", "maxActions"]) {
+          try {
+            const desc = Object.getOwnPropertyDescriptor(NativeNotification, key);
+            if (desc) Object.defineProperty(WrappedNotification, key, desc);
+          } catch (error) {}
+        }
+        if (typeof NativeNotification.requestPermission === "function") {
+          WrappedNotification.requestPermission = NativeNotification.requestPermission;
+        }
         window.Notification = WrappedNotification;
       }
     } catch (error) {}
@@ -2135,7 +2198,9 @@
     window.setTimeout(rewriteExisting, 1200);
     window.setInterval(rewriteExisting, 5000);
 
-    window.__QQ7_NOTIFY_SOUND__ = { replay: playQQ };
+    // replay 保持 playQQ 的原签名；但绕过播放开关只保留诊断用途时，
+    // 应尊重配置——封装为带配置检查的版本，禁用时静默跳过。
+    window.__QQ7_NOTIFY_SOUND__ = { replay: () => playQQ(true) };
   }
 
   function start() {

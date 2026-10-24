@@ -59,7 +59,23 @@ if (Test-Path $index) {
   $text = ([regex]'[ \t]*<script[^>]*qq2008-notify\.js[^>]*>\s*</script>\r?\n?').Replace($text, '')
   $text = ([regex]'<!--QQ2007-THEME-PAD[\s\S]*?-->').Replace($text, '')
   $bytes = [Text.Encoding]::UTF8.GetBytes($text)
-  if ($bytes.Length -lt $target) {
+  if ($bytes.Length -gt $target) {
+    # 与 install.ps1 的 Fit-Index 对称：清理后若仍超出 asar 记录的字节数
+    # （例如 WorkBuddy 升级替换了 asar），压缩现有 HTML 注释补齐差值。
+    $delta = $bytes.Length - $target
+    $matches = [regex]::Matches($text, '<!--[\s\S]*?-->') | Sort-Object { $_.Length }
+    $done = $false
+    foreach ($m in $matches) {
+      if ($m.Length -ge ($delta + 7)) {
+        $replacement = '<!--' + (' ' * ($m.Length - $delta - 7)) + '-->'
+        $text = $text.Substring(0, $m.Index) + $replacement + $text.Substring($m.Index + $m.Length)
+        $done = $true
+        break
+      }
+    }
+    if (-not $done) { Fail "清理后需再缩减 $delta 字节但找不到可压缩注释；为安全起见不写入。" }
+    $bytes = [Text.Encoding]::UTF8.GetBytes($text)
+  } elseif ($bytes.Length -lt $target) {
     $need = $target - $bytes.Length
     $prefix = '<!--QQ2007-THEME-PAD '; $suffix = '-->'
     if ($need -ge ($prefix.Length + $suffix.Length)) {
@@ -68,6 +84,7 @@ if (Test-Path $index) {
       $bytes = [Text.Encoding]::UTF8.GetBytes($text)
     }
   }
+  if ($bytes.Length -ne $target) { Fail "清理后字节数对齐失败：$($bytes.Length) != $target（不写入，保留原文件）" }
   [IO.File]::WriteAllBytes("$index.qq7tmp", $bytes)
   Move-Item "$index.qq7tmp" $index -Force
   Write-Host "index.html 已清理主题注入。"

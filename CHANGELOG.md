@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.2.3 (2026-10-24)
+
+### 修复
+- 修复通知音替换自 v1.0.0 起静默失效的 TDZ 缺陷：`QQ_SOUND_URL` 声明移到首次使用之前，`qqNotify` 不再恒为 `null`，经典滴滴声替换与 900ms 去重恢复工作
+- 召唤专家成功后按钮复位为可点击，不再因 `refreshFriendData` 签名未变跳过重建而永久停在「召唤中…」
+- 账号名进入外壳 `innerHTML` 前统一 `escapeHtml` 转义，消除昵称含 HTML 字符时的注入风险
+- 好友列表渲染超过 200 条截断时行数口径修正：`dataset.rendered` 记录实际渲染数（键盘导航 / 筛选用它），`dataset.total` 记录数据源总数，超限时分组计数显示「渲染数/总数」，筛选计数不再虚报
+- 键盘导航可见行判断与筛选统一为 `row.hidden` 口径，不再依赖 `offsetParent`
+- 替换通知音的音量/开关与 `qq2008-notify.js` 共用同一 localStorage 配置（皮肤关闭或声音关闭时一同静音）
+- Windows 卸载器清理注入后若超出 asar 记录字节数，补上与安装器对称的注释压缩路径，并对齐失败时拒绝写入
+- 修复好友列表签名只含专家 id 的问题：签名现包含 canSummon / blockedLabel，专家目录迟到时团队/金融禁召唤标记能正确同步到面板
+- 列表键盘导航按 Enter 时统一阻止默认与冒泡，技能行回车不再可能触发 App 全局快捷键
+- Notification 包装补回 `permission` / `requestPermission` 等静态属性，App 调用 `Notification.requestPermission()` 不再抛 TypeError
+- `__QQ7_NOTIFY_SOUND__.replay` 改走配置检查路径，皮肤或声音开关关闭时静默跳过；静音期间不再占用 900ms 去重窗口
+- 皮肤关闭时清理宠物运行态 class（加载占位 / 举牌状态），避免残留视觉
+
+### 界面
+- 输入区容器改铺白底并去掉顶部分隔线：此前容器为透明，周围内边距透出 `#root` 浅蓝底色，看起来像「输入框背后有色块」；同时从 `qq2008-583-adapter.css` 的透明层列表移除 `.conversation-input-area`，从根源消除冲突
+- 会话页左右两侧浅蓝色带消除：`qq2008-583-adapter.css` 用 `#root .teams-container [data-view-id="main-content"]` 铺了蓝白渐变，特异性高于单类选择器，导致输入框两侧各露出约 220px 渐变。中间三层容器改用 `body.qq7-shell #root` 前缀铺白
+- Q 宠贴回输入框上沿：Ruffle 舞台为 244×244 方框、SWF 内容只占下半部，原 `translateY(-72%)` 让企鹅悬空 25~26px。改为 `-54%` 后，任务对话页与新建任务页的企鹅双脚均踩在输入框上沿，两页位置一致
+
+### 维护工程
+- 静态测试新增 7 项回归断言：TDZ 声明顺序、召唤成功复位、账号名转义、渲染截断一致性、键盘可见口径、音量配置同源
+- `.gitignore` 忽略本地逆向分析产物目录
+
 ## 1.2.2 (2026-10-23)
 
 ### 修复
