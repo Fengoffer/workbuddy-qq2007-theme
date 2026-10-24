@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.14 (2026-10-24)
+
+### 维护工程
+- `create-gitee-release.sh` 新增 `--update` 模式：按 tag 定位已有 Gitee 发行版并
+  PATCH 说明与 `target_commitish`，找不到则退化为创建。用于 tag 移动后刷新 Release。
+- MAINTAINING 补充「更新已有 Release」用法（GitHub 侧用 `gh release edit`）。
+
+### 发布修正
+- v1.3.12 的 tag 移动到包含换肤截图的提交（`dcd950a`），双仓库 tag 同步更新并
+  force-push；GitHub 与 Gitee 的 Release 说明重写为带 8 张截图、
+  按 `.github/release.yml` 分类组织的版本。
+
 ## 1.3.13 (2026-10-24)
 
 ### 文档

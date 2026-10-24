@@ -139,6 +139,15 @@ GITEE_TOKEN=你的令牌 bash scripts/maintenance/create-gitee-release.sh vX.Y.Z
 
 也可以在网页手动创建：仓库 → 发行版 → 新建发行版，选择对应 tag 后粘贴同一份说明。
 
+**更新已有 Release**（例如 tag 被移动到新提交、或说明需要加截图）：
+
+```bash
+bash scripts/maintenance/create-gitee-release.sh --update vX.Y.Z /tmp/release-notes.md
+```
+
+`--update` 会按 tag 找到已有发行版并 PATCH 其说明与 `target_commitish`；
+找不到则自动退化为创建。GitHub 侧用 `gh release edit vX.Y.Z --notes-file ...`。
+
 Gitee 会同步代码和 tag，但 Release 说明不会随 git push 自动出现，发布时不要漏掉这一步。
 
 ### 5.6 发布后
