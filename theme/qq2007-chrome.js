@@ -764,7 +764,7 @@
       <div class="qq7-titlebar">
         <span class="qq7-title-ico"></span>
         <span class="qq7-title-text">WorkBuddy 2007</span>
-        <span class="qq7-colorbtn" role="button" tabindex="-1" aria-haspopup="menu" aria-expanded="false" title="颜色编辑" aria-label="颜色编辑"><i></i></span>
+        <span class="qq7-colorbtn" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" title="颜色编辑" aria-label="颜色编辑"><i></i></span>
         <div class="qq7-titlebar-jszone"></div>
       </div>
       <div class="qq7-menubar">
@@ -2256,40 +2256,41 @@
   ];
   // 皮肤色令牌（名字即原始 RRGGBB，不含 #）
   const SKIN_TOKENS = [
-    "0054E3", "04131C", "061923", "061C2B", "071F31", "07558F", "09151E", "0A1720", "0A4FC0", "0A5FCE",
-    "0A62F0", "0B1822", "0B1923", "0B3A5B", "0B6EFB", "0C202D", "0C2534", "0C4A94", "0C5F9F", "0D202B",
-    "0D2635", "0D4C8C", "0E2330", "0F202C", "0F4E82", "0F5D9B", "102531", "102532", "102631", "102A3A",
-    "102B3B", "102C3C", "122834", "12395C", "123C63", "125171", "1265AA", "126DB4", "132733", "133448",
-    "135F9D", "142936", "142B38", "142C39", "145C84", "145D99", "1476C3", "152C3A", "15578A", "155F9F",
-    "163E5C", "17303D", "173352", "173B50", "173D53", "173F5D", "17436B", "17649E", "176AA9", "1777C3",
-    "183441", "18384A", "183A54", "18567C", "1878C5", "193340", "193846", "194B67", "1A3B4D", "1A3C4E",
-    "1A5AA6", "1A7DFF", "1B3948", "1C5672", "1C78AA", "1D78A9", "1F73B5", "203C50", "203D4D", "20506B",
-    "20516B", "223F54", "22496F", "2274B5", "234B67", "234C70", "244760", "244B5E", "245B81", "246F9C",
-    "257EAA", "263D50", "2677B6", "278DBF", "286888", "2878B3", "287EBE", "29475C", "294B5D", "2A6491",
-    "2A6FC0", "2C5970", "2C5C73", "2D83C6", "2E607A", "2E83C5", "2F688D", "2F8ED2", "2F90FF", "315B71",
-    "315F76", "315F78", "315F7F", "3187C7", "3292D7", "338AC7", "3491D4", "35677E", "356981", "36566C",
-    "36576E", "365F72", "37677D", "376D86", "396A80", "396B82", "39769F", "397FB4", "3A7895", "3B82CF",
-    "3B86A9", "3C98DA", "3D6F91", "3D6F96", "3D8BD6", "3D99DC", "3D9BDE", "3E83A5", "3F97FF", "405F74",
-    "425F74", "42677F", "47758D", "48677D", "49A9DE", "4A84B8", "4A87A4", "4B87A2", "4B8CD4", "4B94C5",
-    "4B98CE", "4B9ED8", "4C8FBD", "4E7691", "526F83", "5798C4", "587899", "5A9DE8", "5B7590", "5CABE1",
-    "5D9BC7", "5F7789", "5F7F95", "607989", "617B8E", "61B8E8", "667F92", "668291", "6CA3C6", "6F9FBE",
-    "6FA6CA", "718B9A", "75B7E2", "75C1EE", "76C3F0", "77A9CA", "7890A0", "7899AA", "78ACD0", "79ADD1",
-    "79C4F1", "7A94AA", "7B91A1", "7EADD0", "7EAFD0", "7F9DB9", "7FAECA", "7FB2D9", "82B3D2", "83A7BA",
-    "85C0E5", "86B8D7", "8AB4D6", "8AB5D1", "8BA0AF", "8BB5D0", "8CA9B8", "8DB8D5", "8DB9D4", "8DB9D5",
-    "8EB4C7", "8EB9D6", "8FA9B9", "8FB4D0", "8FB5C8", "8FB9D4", "8FC9EC", "91A3B1", "91ABBA", "91B7CB",
-    "91D7FA", "9AA9B6", "9AB7CF", "9ABBD0", "9BBFD7", "9EC8E0", "9FB3C4", "9FBED2", "9FBFD8", "9FCFEE",
-    "A3C0D8", "A7C8DC", "A7C9DA", "A9C4D2", "A9C7DD", "A9D3EF", "A9D7F2", "AAC6DD", "AAC9DC", "AFD9F1",
-    "B4CEDF", "B5D2E4", "B6D2E6", "B7C9D8", "B7CEDB", "B7D2E2", "B7D9F0", "B8D7E9", "B9CFE2", "B9D9E9",
-    "B9DFF5", "BCDCF4", "BFD6E2", "BFD7E3", "BFE4FF", "C3D8E8", "C4E1F3", "C5E2F3", "C6E4F5", "C8DBEA",
-    "C9E3F3", "C9E7FA", "CBE6F6", "CCE9FA", "CCECFF", "CFE6F8", "CFE6FB", "CFE7F5", "CFE7F8", "D0E2ED",
-    "D0E6F4", "D3E9FA", "D3EAF8", "D5EAFA", "D6EAF7", "D6EBFB", "D7EAF6", "D7ECF8", "D8E9F3", "D8ECFB",
-    "D8EDF7", "D8F0FD", "D9EBF6", "D9ECFB", "D9EFFC", "DBEAF4", "DCEEF9", "DCEEFC", "DCF4FF", "DDF0FD",
-    "DFEAF7", "DFEEFB", "DFF3FF", "DFF5FF", "E0EBF2", "E2F0F8", "E2F1FC", "E3F0F8", "E3F2FB", "E3F2FD",
-    "E4F0F7", "E4F3FB", "E5F3FB", "E6F3FD", "E6F4FC", "E7F2F8", "E7F3FD", "E7F4FA", "E8F3FA", "E8F4FE",
-    "E8F4FF", "E9F5FF", "E9F6FD", "EAF3F9", "EAF5FF", "EAF6FE", "EAF6FF", "EAF7FF", "EDF5FA", "EDF7FF",
-    "EDF8FF", "EEF5FB", "EEF6FC", "EEF8FD", "EEF8FF", "EFF9FF", "EFFAFF", "F0F9FF", "F1F7FB", "F1FAFF",
-    "F2F8FC", "F2F9FF", "F4F9FD", "F4FBFF", "F6FBFE", "F6FCFF", "F7FBFE", "F7FCFF", "F8FDFF", "F9FDFF",
-    "FBFDFF"
+    "0054E3", "04131C", "061923", "061C2B", "071E81", "071F31", "07558F", "09151E", "0A1720", "0A4FC0",
+    "0A5FCE", "0A62F0", "0B1822", "0B1923", "0B3A5B", "0B6EFB", "0C202D", "0C2534", "0C4A94", "0C5F9F",
+    "0D202B", "0D2635", "0D4C8C", "0E2330", "0F202C", "0F4E82", "0F5D9B", "102531", "102532", "102631",
+    "102A3A", "102B3B", "102C3C", "122834", "12395C", "123C63", "125171", "1265AA", "126DB4", "132733",
+    "133448", "135F9D", "142936", "142B38", "142C39", "145C84", "145D99", "1476C3", "152C3A", "15578A",
+    "155F9F", "163E5C", "17303D", "173352", "173B50", "173D53", "173F5D", "17436B", "17649E", "176AA9",
+    "1777C3", "183441", "18384A", "183A54", "18567C", "1878C5", "193340", "193846", "194B67", "1A3B4D",
+    "1A3C4E", "1A5AA6", "1A7DFF", "1B3948", "1C5672", "1C78AA", "1D78A9", "1F73B5", "203C50", "203D4D",
+    "20506B", "20516B", "223F54", "22496F", "2274B5", "234B67", "234C70", "244760", "244B5E", "245B81",
+    "246F9C", "257EAA", "263D50", "2677B6", "278DBF", "286888", "2878B3", "287EBE", "29475C", "294B5D",
+    "2A6491", "2A6FC0", "2C5970", "2C5C73", "2D83C6", "2E607A", "2E83C5", "2F688D", "2F8ED2", "2F90FF",
+    "315B71", "315F76", "315F78", "315F7F", "3187C7", "3292D7", "338AC7", "3491D4", "35677E", "356981",
+    "36566C", "36576E", "365F72", "37677D", "376D86", "396A80", "396B82", "39769F", "397FB4", "3A7895",
+    "3B82CF", "3B86A9", "3C98DA", "3D6F91", "3D6F96", "3D8BD6", "3D99DC", "3D9BDE", "3E83A5", "3F97FF",
+    "405F74", "425F74", "42677F", "47758D", "48677D", "49A9DE", "4A84B8", "4A87A4", "4B87A2", "4B8CD4",
+    "4B94C5", "4B98CE", "4B9ED8", "4C8FBD", "4E7691", "526F83", "5798C4", "587899", "5A9DE8", "5B7590",
+    "5CABE1", "5D9BC7", "5F7789", "5F7F95", "607989", "617B8E", "61B8E8", "667F92", "668291", "6CA3C6",
+    "6F9FBE", "6FA6CA", "718B9A", "75B7E2", "75C1EE", "76C3F0", "77A9CA", "7890A0", "7899AA", "78ACD0",
+    "79ADD1", "79C4F1", "7A94AA", "7B91A1", "7EADD0", "7EAFD0", "7F9DB9", "7FAECA", "7FB2D9", "82B3D2",
+    "83A7BA", "85C0E5", "86B8D7", "8AB4D6", "8AB5D1", "8BA0AF", "8BB5D0", "8CA9B8", "8DB8D5", "8DB9D4",
+    "8DB9D5", "8EB4C7", "8EB9D6", "8FA9B9", "8FB4D0", "8FB5C8", "8FB9D4", "8FC9EC", "91A3B1", "91ABBA",
+    "91B7CB", "91D7FA", "9AA9B6", "9AB7CF", "9ABBD0", "9BBFD7", "9EC8E0", "9FB3C4", "9FBED2", "9FBFD8",
+    "9FCFEE", "A3C0D8", "A7C8DC", "A7C9DA", "A9C4D2", "A9C7DD", "A9D3EF", "A9D7F2", "AAC6DD", "AAC9DC",
+    "AFD9F1", "B4CEDF", "B5D2E4", "B6D2E6", "B7C9D8", "B7CEDB", "B7D2E2", "B7D9F0", "B8D7E9", "B9CFE2",
+    "B9D9E9", "B9DFF5", "BCDCF4", "BFD6E2", "BFD7E3", "BFE4FF", "C3D8E8", "C4E1F3", "C5E2F3", "C6E4F5",
+    "C8DBEA", "C9E3F3", "C9E7FA", "CBE6F6", "CCE9FA", "CCECFF", "CFE6F8", "CFE6FB", "CFE7F5", "CFE7F8",
+    "D0E2ED", "D0E6F4", "D3E9FA", "D3EAF8", "D5EAFA", "D6EAF7", "D6EBFB", "D7EAF6", "D7ECF8", "D8E9F3",
+    "D8ECFB", "D8EDF7", "D8F0FD", "D9EBF6", "D9ECFB", "D9EFFC", "DBEAF4", "DCEEF9", "DCEEFC", "DCF4FF",
+    "DDF0FD", "DFEAF7", "DFEEFB", "DFF3FF", "DFF5FF", "E0EBF2", "E2F0F8", "E2F1FC", "E3F0F8", "E3F2FB",
+    "E3F2FD", "E4F0F7", "E4F3FB", "E5F3FB", "E6F3FD", "E6F4FC", "E7F2F8", "E7F3FD", "E7F4FA", "E8F3FA",
+    "E8F4FE", "E8F4FF", "E9F5FF", "E9F6FD", "EAF3F9", "EAF5FF", "EAF6FE", "EAF6FF", "EAF7FF", "EDF5FA",
+    "EDF7FF", "EDF8FF", "EEF5FB", "EEF6FC", "EEF8FD", "EEF8FF", "EFF9FF", "EFFAFF", "F0F9FF", "F1F7FB",
+    "F1FAFF", "F2F8FC", "F2F9FF", "F4F9FD", "F4FBFF", "F6FBFE", "F6FCFF", "F7FBFE", "F7FCFF", "F8FDFF",
+    "F9FDFF", "FBFDFF"
+  
   ];
 
   const hexToRgb = (hex) => {
@@ -2411,13 +2412,13 @@
       const current = isDefault ? item.id === "restore" : (item.id === "sky" && theme.hue === HUE_BASE);
       const chip = item.id === "restore" ? "linear-gradient(135deg,#ff7e00,#0a62f0)"
         : swatchFor(item.hue);
-      return `<div class="qq7-colormenu-item${current ? " is-current" : ""}" data-color="${item.id}" role="menuitem" tabindex="0">`
+      return `<div class="qq7-colormenu-item${current ? " is-current" : ""}" data-color="${item.id}" role="menuitem" tabindex="-1">`
         + `<span class="qq7-colormenu-chip" style="background:${chip}"></span>`
         + `<span>${item.label}</span></div>`;
     }).join("");
     return rows
       + `<div class="qq7-colormenu-sep"></div>`
-      + `<div class="qq7-colormenu-item${isDefault ? "" : " is-current"}" data-color="custom" role="menuitem" tabindex="0">`
+      + `<div class="qq7-colormenu-item${isDefault ? "" : " is-current"}" data-color="custom" role="menuitem" tabindex="-1">`
       + `<span class="qq7-colormenu-chip" style="background:linear-gradient(135deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f)"></span>`
       + `<span>自定义</span><span class="qq7-colormenu-hint">色调/亮度</span></div>`;
   }
@@ -2470,6 +2471,13 @@
     syncColorMenuState();
     colorMenuEl.hidden = false;
     if (colorBtnEl) colorBtnEl.setAttribute("aria-expanded", "true");
+    // 打开后把焦点交给当前配色项，键盘用户可直接用方向键选择
+    const items = [...colorMenuEl.querySelectorAll(".qq7-colormenu-item")];
+    const active = items.find((item) => item.classList.contains("is-current")) || items[0];
+    if (active) {
+      items.forEach((item) => { item.tabIndex = item === active ? 0 : -1; });
+      active.focus();
+    }
   }
 
   function selectPreset(id) {
@@ -2513,6 +2521,12 @@
       event.preventDefault();
       event.stopPropagation();
       if (colorMenuEl.hidden) openColorMenu(); else closeColorMenu();
+    });
+    colorBtnEl.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+        event.preventDefault();
+        openColorMenu();
+      }
     });
 
     colorMenuEl.addEventListener("click", (event) => {
@@ -2564,7 +2578,57 @@
     });
 
     colorMenuEl.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") { closeColorMenu(); }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeColorMenu();
+        if (colorBtnEl) colorBtnEl.focus();
+        return;
+      }
+      const items = [...colorMenuEl.querySelectorAll(".qq7-colormenu-item")];
+      if (!items.length) return;
+      const current = items.indexOf(document.activeElement);
+      const focusItem = (index) => {
+        const target = items[(index + items.length) % items.length];
+        items.forEach((item) => { item.tabIndex = -1; });
+        target.tabIndex = 0;
+        target.focus();
+      };
+      switch (event.key) {
+        case "ArrowDown":
+        case "Down":
+          event.preventDefault();
+          focusItem(current < 0 ? 0 : current + 1);
+          break;
+        case "ArrowUp":
+        case "Up":
+          event.preventDefault();
+          focusItem(current < 0 ? items.length - 1 : current - 1);
+          break;
+        case "Home":
+          event.preventDefault();
+          focusItem(0);
+          break;
+        case "End":
+          event.preventDefault();
+          focusItem(items.length - 1);
+          break;
+        case "Enter":
+        case " ":
+          if (current >= 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            selectPreset(items[current].dataset.color);
+          }
+          break;
+        default:
+          break;
+      }
+    });
+    // 点击取色滑条等控件时不要让焦点被外层抢走
+    colorMenuEl.addEventListener("focusin", (event) => {
+      const item = event.target.closest && event.target.closest(".qq7-colormenu-item");
+      if (!item) return;
+      colorMenuEl.querySelectorAll(".qq7-colormenu-item").forEach((el) => { el.tabIndex = el === item ? 0 : -1; });
     });
     colorMenuEl.addEventListener("mousedown", (event) => event.stopPropagation());
     // 点空白处关闭（QQ2007 菜单也是点别处收起）

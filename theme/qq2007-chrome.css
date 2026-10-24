@@ -1510,15 +1510,34 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
   border-radius: 1px;
 }
 
-#qq7-root .qq7-colormenu-item:hover,
-#qq7-root .qq7-colormenu-item:focus-visible {
+#qq7-root .qq7-colormenu-item:hover {
   background: #cfe7ff;
-  outline: none;
+}
+
+/* 键盘焦点要有可见框；放在 hover 之后、is-current 之前，
+   由后面的专门规则提供 outline，这里只保证背景一致 */
+#qq7-root .qq7-colormenu-item:focus-visible,
+#qq7-root .qq7-colormenu-item.is-keyboard-active {
+  background: #cfe7ff;
+  outline: 1px dotted var(--qq7-c-071E81, #071e81);
+  outline-offset: -1px;
 }
 
 #qq7-root .qq7-colormenu-item.is-current {
   font-weight: 700;
   background: var(--qq7-c-E6F3FD, #e6f3fd);
+}
+
+/* 当前项同时有键盘焦点时，仍要能看见焦点 */
+#qq7-root .qq7-colormenu-item.is-current:focus-visible {
+  background: #cfe7ff;
+  outline: 1px dotted var(--qq7-c-071E81, #071e81);
+  outline-offset: -1px;
+}
+
+#qq7-root .qq7-colorbtn:focus-visible {
+  outline: 2px solid var(--qq7-c-0054E3, #0054e3);
+  outline-offset: 1px;
 }
 
 #qq7-root .qq7-colormenu-chip {

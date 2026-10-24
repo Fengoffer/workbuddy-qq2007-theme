@@ -312,5 +312,49 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("aria-haspopup=\"menu\"", self.js)
 
 
+    # ------------------------------------------------------------------
+    # 换肤菜单无障碍回归（与好友列表同一套键盘规范）
+    # ------------------------------------------------------------------
+    def test_color_button_keyboard_reachable(self) -> None:
+        """「+」按钮必须能被 Tab 聚焦并用键盘打开，否则键盘用户完全用不了换肤。"""
+        self.assertRegex(
+            self.js,
+            r'class="qq7-colorbtn"[^>]*tabindex="0"',
+            msg="颜色按钮必须 tabindex=\"0\"，不能用 -1 把键盘用户挡在外面",
+        )
+        start = self.js.index("colorBtnEl.addEventListener(\"keydown\"")
+        body = self.js[start : start + 500]
+        for key in ("Enter", " ", "ArrowDown"):
+            self.assertIn(f'"{key}"', body, msg=f"按钮键盘事件缺少 {key}")
+
+    def test_color_menu_roving_tabindex(self) -> None:
+        """菜单项用 roving tabindex：只有一项可 Tab，避免 Tab 穿透整屏。"""
+        self.assertIn('role="menuitem" tabindex="-1"', self.js)
+        # 打开时再置 0
+        start = self.js.index("function openColorMenu")
+        body = self.js[start : start + 900]
+        self.assertIn("tabIndex = item === active ? 0 : -1", body)
+
+    def test_color_menu_arrow_navigation(self) -> None:
+        """方向键 / Home / End / Enter 都不能少，且 Escape 要归还焦点给按钮。"""
+        start = self.js.index('case "ArrowDown":')
+        body = self.js[start : start + 1200]
+        for token in ("ArrowUp", "Home", "End", "Enter"):
+            self.assertIn(token, body, msg=f"菜单键盘导航缺少 {token}")
+        # 必须定位到颜色菜单自己的 Escape 处理（文件里还有好友列表的 Escape）
+        menu_start = self.js.index('if (event.key === "Escape") {\n        event.preventDefault();\n        closeColorMenu();')
+        esc = self.js[menu_start : menu_start + 300]
+        self.assertIn("colorBtnEl.focus()", esc, msg="Escape 后必须把焦点还给按钮")
+
+    def test_color_menu_has_visible_focus_style(self) -> None:
+        """键盘焦点必须有可见样式，不能 outline: none。"""
+        self.assertIn("#qq7-root .qq7-colorbtn:focus-visible", self.css)
+        self.assertIn("#qq7-root .qq7-colormenu-item.is-current:focus-visible", self.css)
+        # 不能在没有替代 outline 的情况下直接关掉焦点框
+        start = self.css.index("#qq7-root .qq7-colormenu-item:focus-visible")
+        block = self.css[start : start + 300]
+        self.assertNotIn("outline: none", block)
+
+
 if __name__ == "__main__":
     unittest.main()
