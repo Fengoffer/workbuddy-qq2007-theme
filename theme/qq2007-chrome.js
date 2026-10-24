@@ -54,10 +54,12 @@
     document.body.classList.toggle("qq7-off", !on);
     if (root) root.style.display = on ? "" : "none";
     // 皮肤关闭时清掉自选配色令牌，让原生界面完全不受主题配色影响
-    if (themeStyleEl) {
-      // 关闭：清令牌让原生界面不受影响；重新打开：恢复已保存的自选配色
-      if (!on) themeStyleEl.textContent = "";
-      else if (themeStyleEl.textContent === "") applyTheme();
+    if (!on) {
+      // 关闭：清令牌让原生界面不受影响
+      if (themeStyleEl && themeStyleEl.isConnected) themeStyleEl.textContent = "";
+    } else if (!themeStyleEl || !themeStyleEl.isConnected || themeStyleEl.textContent === "") {
+      // 重新打开（或令牌元素曾丢失）：恢复已保存的自选配色
+      applyTheme();
     }
     if (!on) {
       // 皮肤关闭时清掉运行态 class，避免残留的「加载中」占位图 / 举牌动画
@@ -1588,6 +1590,11 @@
     if (toggle) toggle.remove();
     const root = document.getElementById("qq7-root");
     if (root) root.remove();
+    // 换色令牌也要清掉：次级窗口是原生界面，不能被上一窗口的自选配色污染。
+    // （本函数在 start() 早期就 return，此时 themeStyleEl 通常还没创建，
+    //   但同一渲染进程若曾作为主窗口运行过，元素可能已存在。）
+    const themeStyle = document.getElementById("qq7-theme-vars");
+    if (themeStyle) themeStyle.remove();
     document.body.classList.remove("qq7-shell");
     document.body.classList.add("qq7-off");
   }
@@ -2405,7 +2412,9 @@
     const t = theme || readTheme();
     const delta = t.custom ? (t.hue - HUE_BASE) : 0;
     const light = t.custom ? (t.light || 0) / 100 : 0;
-    if (!themeStyleEl) {
+    // 元素可能已被其他路径移除（例如切到次级窗口时清理），
+    // 此时缓存引用虽在但已脱离 DOM，写入不会生效，必须重建。
+    if (!themeStyleEl || !themeStyleEl.isConnected) {
       themeStyleEl = document.createElement("style");
       themeStyleEl.id = "qq7-theme-vars";
       document.head.appendChild(themeStyleEl);

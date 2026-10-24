@@ -289,8 +289,9 @@ class ThemeStaticTests(unittest.TestCase):
 
     def test_color_button_hidden_when_skin_off(self) -> None:
         """皮肤关闭时配色令牌必须清空，原生界面不能被自选颜色污染。"""
-        self.assertIn("if (!on) themeStyleEl.textContent = \"\"", self.js)
-        self.assertIn("else if (themeStyleEl.textContent === \"\") applyTheme()", self.js)
+        # 重构后改为带 isConnected 守卫的形式
+        self.assertIn('if (themeStyleEl && themeStyleEl.isConnected) themeStyleEl.textContent = ""', self.js)
+        self.assertIn("applyTheme()", self.js)
         self.assertIn("body.qq7-off #qq7-root .qq7-colormenu { display: none !important; }", self.css)
 
     def test_theme_style_element_declared_before_sync_skin(self) -> None:
@@ -535,6 +536,20 @@ class ThemeStaticTests(unittest.TestCase):
         """取色面板的按钮与滑条必须有可见焦点，否则键盘用户看不到焦点。"""
         self.assertIn(".qq7-picker-btn:focus-visible", self.css)
         self.assertIn('.qq7-picker input[type="range"]:focus-visible', self.css)
+
+    def test_theme_style_rebuilt_when_detached(self) -> None:
+        """themeStyleEl 可能被其他路径移除，applyTheme 必须重建而不是写进游离元素。"""
+        start = self.js.index("function applyTheme")
+        body = self.js[start : self.js.index("function swatchFor", start)]
+        self.assertIn("themeStyleEl.isConnected", body,
+                      msg="必须在元素脱离 DOM 时重建，否则换色静默失效")
+
+    def test_secondary_window_clears_theme_tokens(self) -> None:
+        """次级窗口是原生界面，必须清掉换色令牌，不能沿用主窗口的自选配色。"""
+        start = self.js.index("function disableSkinForSecondaryWindow")
+        body = self.js[start : start + 900]
+        self.assertIn('getElementById("qq7-theme-vars")', body)
+        self.assertIn("themeStyle.remove()", body)
 
 
 if __name__ == "__main__":
