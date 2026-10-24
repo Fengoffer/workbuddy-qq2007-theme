@@ -209,7 +209,19 @@ CI 最常见的失败原因：
 
 改完必须跑：`python3 -m unittest discover -s tests`，其中 9 项专门守护换肤逻辑。
 
-### 7.6 新增主题资源
+### 7.6 维护换肤按钮图标
+
+换肤按钮图标是 `theme/qq7-skin-shirt.png`，**按 QQ2007 原版图标的画风**制作：
+
+- 黑色描边 + 平涂色块，**不用渐变、不加抗锯齿**，与 `qq7-icons.png` 那套 16px 图标一致；
+- 美术图按 32×32 绘制、CSS 按 16×16 显示（Retina 清晰，普通屏自动降采样）；
+- 因此**不要**给它加 `image-rendering: pixelated`——会把降采样边缘切碎。
+  静态测试已锁定这一条。
+
+替换时保持 16×16 或 32×32 两种尺寸之一，并同步更新四个脚本的资源清单
+（macOS install/uninstall、Windows install/uninstall）；CI 会校验四者对称。
+
+### 7.7 新增主题资源
 
 1. 放进 `theme/`；
 2. 加入 `scripts/macos/install.sh` 的 `for f in ...` 列表；

@@ -358,6 +358,7 @@ workbuddy-qq2007-theme/
 │   ├── qq2008-583-adapter.css # WorkBuddy 5.8.3 聊天适配
 │   ├── qq2007-chrome.css/js   # QQ 2007 外壳 / 颜色编辑换肤 / 宠物 / 签名 / 通知音
 │   ├── qq2008-notify.js       # 皮肤开关、任务声音
+│   ├── qq7-skin-shirt.png     # 换肤按钮图标（16×16 像素画小衣服）
 │   ├── qq7pet/                # Ruffle + 宠物 SWF
 │   └── *.png / *.wav
 ├── scripts/
