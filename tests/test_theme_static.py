@@ -573,6 +573,13 @@ class ThemeStaticTests(unittest.TestCase):
                 continue
             self.assertTrue(0 <= int(hue) <= 359, msg=f"{label} 色相越界：{hue}")
 
+    def test_swatch_base_exists_in_token_table(self) -> None:
+        """色块基准色必须存在于令牌表，否则菜单色块与实际应用颜色会不一致。"""
+        self.assertIn('const SWATCH_BASE = "0A62F0"', self.js)
+        start = self.js.index("const SKIN_TOKENS = [")
+        block = self.js[start : self.js.index("];", start)]
+        self.assertIn('"0A62F0"', block, msg="色块基准色 0A62F0 必须登记在令牌表中")
+
 
 if __name__ == "__main__":
     unittest.main()

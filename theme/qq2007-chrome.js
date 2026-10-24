@@ -2436,9 +2436,12 @@
     return t;
   }
 
-  /* 当前配色对应的色板小方块颜色（用于菜单左侧色块） */
+  /* 当前配色对应的色板小方块颜色（菜单左侧色块）。
+     基准色 0A62F0 必须等于 SKIN_TOKENS 里的标题栏主色，否则色块与实际应用的颜色不一致；
+     静态测试会校验这个不变量。 */
+  const SWATCH_BASE = "0A62F0";
   function swatchFor(hue) {
-    return rotateToken("0A62F0", hue, 0);
+    return rotateToken(SWATCH_BASE, hue, 0);
   }
 
   function colorMenuHtml() {
