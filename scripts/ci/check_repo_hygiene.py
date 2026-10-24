@@ -54,6 +54,9 @@ REQUIRED_PATHS = (
 
 INSTALLERS = ("scripts/macos/install.sh", "scripts/windows/install.ps1")
 
+# 卸载器也必须清理安装时复制进去的每个资源，否则卸载后会残留文件。
+UNINSTALLERS = ("scripts/macos/uninstall.sh", "scripts/windows/uninstall.ps1")
+
 JUNK_NAMES = {".DS_Store", "Thumbs.db", "desktop.ini"}
 JUNK_SUFFIXES = (".log", ".tmp", ".qq7tmp", ".swp")
 
@@ -176,6 +179,15 @@ def main() -> int:
         for name in sorted(set(THEME_REF_RE.findall(text))):
             if not (theme_dir / name).is_file():
                 errors.append(f"安装器 {rel} 引用了不存在的资源：theme/{name}")
+
+    # 6b. 卸载器必须与安装清单对称：安装复制了什么，卸载就要清理什么
+    uninstaller_text = {rel: (ROOT / rel).read_text(encoding="utf-8") for rel in UNINSTALLERS}
+    for name in theme_assets:
+        if not name.endswith((".css", ".js", ".png", ".wav")):
+            continue  # qq7pet/ 等目录另行处理，这里只管单文件资源
+        for rel, text in uninstaller_text.items():
+            if name not in text:
+                errors.append(f"卸载器 {rel} 没有清理主题资源：theme/{name}")
     swf_files = list((theme_dir / "qq7pet").glob("*.swf"))
     if not swf_files:
         errors.append("theme/qq7pet 下没有任何宠物动作 SWF")

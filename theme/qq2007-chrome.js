@@ -267,6 +267,9 @@
   }
 
   function runAction(action) {
+    // 菜单项点击事件会冒泡到这里；换肤按钮 / 菜单面板等非菜单元素没有 data-action，
+    // 传进来的是 undefined，必须防御，否则每次交互都会抛 TypeError。
+    if (typeof action !== "string" || !action) return;
     if (action.startsWith("nav:")) {
       clickNav(action.slice(4));
       return;
@@ -2273,23 +2276,23 @@
     "405F74", "425F74", "42677F", "47758D", "48677D", "49A9DE", "4A84B8", "4A87A4", "4B87A2", "4B8CD4",
     "4B94C5", "4B98CE", "4B9ED8", "4C8FBD", "4E7691", "526F83", "5798C4", "587899", "5A9DE8", "5B7590",
     "5CABE1", "5D9BC7", "5F7789", "5F7F95", "607989", "617B8E", "61B8E8", "667F92", "668291", "6CA3C6",
-    "6F9FBE", "6FA6CA", "718B9A", "75B7E2", "75C1EE", "76C3F0", "77A9CA", "7890A0", "7899AA", "78ACD0",
-    "79ADD1", "79C4F1", "7A94AA", "7B91A1", "7EADD0", "7EAFD0", "7F9DB9", "7FAECA", "7FB2D9", "82B3D2",
-    "83A7BA", "85C0E5", "86B8D7", "8AB4D6", "8AB5D1", "8BA0AF", "8BB5D0", "8CA9B8", "8DB8D5", "8DB9D4",
-    "8DB9D5", "8EB4C7", "8EB9D6", "8FA9B9", "8FB4D0", "8FB5C8", "8FB9D4", "8FC9EC", "91A3B1", "91ABBA",
-    "91B7CB", "91D7FA", "9AA9B6", "9AB7CF", "9ABBD0", "9BBFD7", "9EC8E0", "9FB3C4", "9FBED2", "9FBFD8",
-    "9FCFEE", "A3C0D8", "A7C8DC", "A7C9DA", "A9C4D2", "A9C7DD", "A9D3EF", "A9D7F2", "AAC6DD", "AAC9DC",
-    "AFD9F1", "B4CEDF", "B5D2E4", "B6D2E6", "B7C9D8", "B7CEDB", "B7D2E2", "B7D9F0", "B8D7E9", "B9CFE2",
-    "B9D9E9", "B9DFF5", "BCDCF4", "BFD6E2", "BFD7E3", "BFE4FF", "C3D8E8", "C4E1F3", "C5E2F3", "C6E4F5",
-    "C8DBEA", "C9E3F3", "C9E7FA", "CBE6F6", "CCE9FA", "CCECFF", "CFE6F8", "CFE6FB", "CFE7F5", "CFE7F8",
-    "D0E2ED", "D0E6F4", "D3E9FA", "D3EAF8", "D5EAFA", "D6EAF7", "D6EBFB", "D7EAF6", "D7ECF8", "D8E9F3",
-    "D8ECFB", "D8EDF7", "D8F0FD", "D9EBF6", "D9ECFB", "D9EFFC", "DBEAF4", "DCEEF9", "DCEEFC", "DCF4FF",
-    "DDF0FD", "DFEAF7", "DFEEFB", "DFF3FF", "DFF5FF", "E0EBF2", "E2F0F8", "E2F1FC", "E3F0F8", "E3F2FB",
-    "E3F2FD", "E4F0F7", "E4F3FB", "E5F3FB", "E6F3FD", "E6F4FC", "E7F2F8", "E7F3FD", "E7F4FA", "E8F3FA",
-    "E8F4FE", "E8F4FF", "E9F5FF", "E9F6FD", "EAF3F9", "EAF5FF", "EAF6FE", "EAF6FF", "EAF7FF", "EDF5FA",
-    "EDF7FF", "EDF8FF", "EEF5FB", "EEF6FC", "EEF8FD", "EEF8FF", "EFF9FF", "EFFAFF", "F0F9FF", "F1F7FB",
-    "F1FAFF", "F2F8FC", "F2F9FF", "F4F9FD", "F4FBFF", "F6FBFE", "F6FCFF", "F7FBFE", "F7FCFF", "F8FDFF",
-    "F9FDFF", "FBFDFF"
+    "6D8CAB", "6F9FBE", "6FA6CA", "718B9A", "75B7E2", "75C1EE", "76C3F0", "77A9CA", "7890A0", "7899AA",
+    "78ACD0", "79ADD1", "79C4F1", "7A94AA", "7B91A1", "7EADD0", "7EAFD0", "7F9DB9", "7FAECA", "7FB2D9",
+    "82B3D2", "83A7BA", "85C0E5", "86B8D7", "8AB4D6", "8AB5D1", "8BA0AF", "8BB5D0", "8CA9B8", "8DB8D5",
+    "8DB9D4", "8DB9D5", "8EB4C7", "8EB9D6", "8FA9B9", "8FB4D0", "8FB5C8", "8FB9D4", "8FC9EC", "91A3B1",
+    "91ABBA", "91B7CB", "91D7FA", "9AA9B6", "9AB7CF", "9ABBD0", "9BBFD7", "9EC8E0", "9FB3C4", "9FBED2",
+    "9FBFD8", "9FCFEE", "A3C0D8", "A7C8DC", "A7C9DA", "A9C4D2", "A9C7DD", "A9D3EF", "A9D7F2", "AAC6DD",
+    "AAC9DC", "AFD9F1", "B4CEDF", "B5D2E4", "B6D2E6", "B7C9D8", "B7CEDB", "B7D2E2", "B7D9F0", "B8D7E9",
+    "B9CFE2", "B9D8F2", "B9D9E9", "B9DFF5", "BCDCF4", "BFD6E2", "BFD7E3", "BFE4FF", "C3D8E8", "C4E1F3",
+    "C5E2F3", "C6E4F5", "C8DBEA", "C9E3F3", "C9E7FA", "CBE6F6", "CCE9FA", "CCECFF", "CFE6F8", "CFE6FB",
+    "CFE7F5", "CFE7F8", "CFE7FF", "D0E2ED", "D0E6F4", "D3E9FA", "D3EAF8", "D5EAFA", "D6EAF7", "D6EBFB",
+    "D7EAF6", "D7ECF8", "D8E9F3", "D8ECFB", "D8EDF7", "D8F0FD", "D9EBF6", "D9ECFB", "D9EFFC", "DBEAF4",
+    "DCEEF9", "DCEEFC", "DCF4FF", "DDF0FD", "DFEAF7", "DFEEFB", "DFF3FF", "DFF5FF", "E0EBF2", "E2F0F8",
+    "E2F1FC", "E3F0F8", "E3F2FB", "E3F2FD", "E4F0F7", "E4F3FB", "E5F3FB", "E6F3FD", "E6F4FC", "E7F2F8",
+    "E7F3FD", "E7F4FA", "E8F3FA", "E8F4FE", "E8F4FF", "E9F5FF", "E9F6FD", "EAF3F9", "EAF5FF", "EAF6FE",
+    "EAF6FF", "EAF7FF", "EDF5FA", "EDF7FF", "EDF8FF", "EEF5FB", "EEF6FC", "EEF8FD", "EEF8FF", "EFF9FF",
+    "EFFAFF", "F0F9FF", "F1F7FB", "F1FAFF", "F2F8FC", "F2F9FF", "F4F9FD", "F4FBFF", "F6FBFE", "F6FCFF",
+    "F7FBFE", "F7FCFF", "F8FDFF", "F9FDFF", "FBFDFF"
   
   ];
 
@@ -2351,18 +2354,37 @@
     let hue = HUE_BASE;
     let light = 0;
     let custom = false;
+    let dirty = false;
     try {
       const rawHue = localStorage.getItem(HUE_KEY);
       if (rawHue !== null) {
         const parsed = Number(rawHue);
-        if (Number.isFinite(parsed) && parsed >= 0 && parsed <= HUE_MAX) { hue = parsed; custom = true; }
+        if (Number.isFinite(parsed) && parsed >= 0 && parsed <= HUE_MAX) {
+          hue = parsed;
+          custom = true;
+        } else {
+          // 存储值被外部改坏（非数字 / 越界）→ 视为未设置，避免"有值但不生效"的僵死状态
+          dirty = true;
+        }
       }
       const rawLight = localStorage.getItem(LIGHT_KEY);
       if (rawLight !== null) {
         const parsed = Number(rawLight);
-        if (Number.isFinite(parsed)) light = Math.min(LIGHT_MAX, Math.max(-LIGHT_MAX, parsed));
+        if (Number.isFinite(parsed)) {
+          light = Math.min(LIGHT_MAX, Math.max(-LIGHT_MAX, parsed));
+        } else if (!dirty) {
+          dirty = true;
+        }
       }
     } catch (error) {}
+    if (dirty) {
+      // 清理坏数据，让界面稳定回到默认天际蓝
+      try {
+        localStorage.removeItem(HUE_KEY);
+        localStorage.removeItem(LIGHT_KEY);
+      } catch (error) {}
+      return { hue: HUE_BASE, light: 0, custom: false };
+    }
     return { hue, light, custom };
   }
 
@@ -2408,8 +2430,15 @@
   function colorMenuHtml() {
     const theme = readTheme();
     const isDefault = !theme.custom;
+    // 当前项判定：
+    // - 默认态（无自选色）→ 高亮「颜色恢复」
+    // - 自选色恰好等于某个预设的色相 → 高亮该预设
+    // - 否则（自定义色调）→ 高亮「自定义」
+    const matchedPreset = isDefault
+      ? COLOR_ITEMS.find((item) => item.id === "restore")
+      : COLOR_ITEMS.find((item) => item.id !== "restore" && item.hue === theme.hue);
     const rows = COLOR_ITEMS.map((item) => {
-      const current = isDefault ? item.id === "restore" : (item.id === "sky" && theme.hue === HUE_BASE);
+      const current = matchedPreset === item;
       const chip = item.id === "restore" ? "linear-gradient(135deg,#ff7e00,#0a62f0)"
         : swatchFor(item.hue);
       return `<div class="qq7-colormenu-item${current ? " is-current" : ""}" data-color="${item.id}" role="menuitem" tabindex="-1">`
@@ -2418,7 +2447,7 @@
     }).join("");
     return rows
       + `<div class="qq7-colormenu-sep"></div>`
-      + `<div class="qq7-colormenu-item${isDefault ? "" : " is-current"}" data-color="custom" role="menuitem" tabindex="-1">`
+      + `<div class="qq7-colormenu-item${!matchedPreset ? " is-current" : ""}" data-color="custom" role="menuitem" tabindex="-1">`
       + `<span class="qq7-colormenu-chip" style="background:linear-gradient(135deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f)"></span>`
       + `<span>自定义</span><span class="qq7-colormenu-hint">色调/亮度</span></div>`;
   }

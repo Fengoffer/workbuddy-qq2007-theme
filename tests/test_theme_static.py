@@ -433,6 +433,63 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertNotIn("width: 22px", block, msg="不应写死按钮宽度，应由内容撑开")
         self.assertIn("flex-shrink: 0", block)
 
+    def test_run_action_guards_undefined(self) -> None:
+        """runAction 必须防御 undefined。
+
+        菜单项点击事件会冒泡到委托处理器，换肤按钮/菜单面板没有 data-action，
+        传进来是 undefined；缺这个守卫会导致每次交互抛 TypeError（已实测复现）。
+        """
+        start = self.js.index("function runAction(action) {")
+        body = self.js[start : start + 400]
+        self.assertIn('typeof action !== "string"', body,
+                      msg="runAction 必须校验 action 为字符串")
+
+    def test_color_menu_highlights_matched_preset(self) -> None:
+        """选中预设后菜单必须高亮该预设，不能高亮「自定义」。
+
+        旧逻辑只判断 isDefault 与 sky，导致选了苹果绿仍高亮「自定义」。
+        """
+        start = self.js.index("function colorMenuHtml()")
+        body = self.js[start : self.js.index("function pickerHtml", start)]
+        self.assertIn("matchedPreset", body)
+        self.assertIn("item.hue === theme.hue", body)
+        self.assertIn('!matchedPreset ? " is-current" : ""', body,
+                      msg="自定义项应仅在未匹配到预设时高亮")
+
+    def test_corrupt_theme_storage_falls_back_to_default(self) -> None:
+        """localStorage 被写坏时必须回退默认天际蓝并清理脏数据。"""
+        start = self.js.index("function readTheme()")
+        body = self.js[start : self.js.index("function saveTheme", start)]
+        self.assertIn("dirty", body, msg="需要记录脏数据状态")
+        self.assertIn("removeItem(HUE_KEY)", body)
+        self.assertIn("removeItem(LIGHT_KEY)", body)
+        self.assertIn("custom: false", body, msg="脏数据时应回退到默认态")
+
+    def test_hue_slider_keeps_full_spectrum(self) -> None:
+        """色调滑条必须保持完整色相环，不能令牌化。
+
+        它展示「选哪个位置得到哪个色相」；若随皮肤一起旋转，
+        滑条颜色与所选色相就不再对应，功能会失效。
+        """
+        start = self.css.index(".qq7-picker input.qq7-hue")
+        end = self.css.index("}", start) + 1
+        block = self.css[start:end]
+        self.assertIn("linear-gradient(90deg", block)
+        self.assertNotIn("var(--qq7-c-", block,
+                         msg="色调条不得令牌化，否则换肤后色相环会错位")
+
+    def test_js_token_table_matches_css_exactly(self) -> None:
+        """JS 令牌表必须与 CSS 实际使用的令牌完全一致：不漏色、也不留死令牌。"""
+        css_all = self.css
+        css_all += (ROOT / "theme" / "qq2008-skin.css").read_text(encoding="utf-8")
+        css_all += (ROOT / "theme" / "qq2008-583-adapter.css").read_text(encoding="utf-8")
+        css_tokens = set(re.findall(r"var\(--qq7-c-([0-9A-F]{6}),", css_all))
+        match = re.search(r"const SKIN_TOKENS = \[(.*?)\n  \];", self.js, re.S)
+        self.assertIsNotNone(match)
+        js_tokens = set(re.findall(r'"([0-9A-F]{6})"', match.group(1)))
+        self.assertEqual(css_tokens - js_tokens, set(), msg="CSS 有令牌未纳入换色表（会漏色）")
+        self.assertEqual(js_tokens - css_tokens, set(), msg="JS 表有 CSS 不再使用的死令牌")
+
 
 if __name__ == "__main__":
     unittest.main()
