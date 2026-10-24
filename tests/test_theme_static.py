@@ -380,21 +380,28 @@ class ThemeStaticTests(unittest.TestCase):
         start = self.css.index("#qq7-root .qq7-colormenu {")
         block = self.css[start : start + 300]
         self.assertIn("top: 94px", block)
-    def test_skin_button_icon_is_color_wheel_not_plus(self) -> None:
-        """换肤按钮必须是色轮图标，不能再是「+」十字。
+    def test_skin_button_icon_is_pixel_palette(self) -> None:
+        """换肤按钮用 16×16 像素画调色盘，而不是「+」或 CSS 矢量图形。
 
-        「+」是原版颜色编辑的入口样式，用户明确要求改成换肤图标；
-        这里锁住 conic-gradient 色轮与中心白点，防止回退成加号。
+        必须与 qq7-icons.png 那套图标的画风一致：位图 + pixelated 渲染。
         """
         start = self.css.index("#qq7-root .qq7-colorbtn i {")
-        block = self.css[start : start + 900]
-        self.assertIn("conic-gradient", block, msg="换肤图标必须是色轮")
-        self.assertIn("border-radius: 50%", block)
-        # 「+」靠两条伪元素竖横条实现；色轮只允许 ::after 画中心点
-        self.assertNotIn("i::before", block, msg="色轮图标不应再用 ::before 画十字竖条")
+        block = self.css[start : start + 600]
+        self.assertIn('url("./qq7-palette.png")', block, msg="换肤图标必须是调色盘位图")
+        self.assertIn("image-rendering: pixelated", block, msg="像素图标必须禁用插值")
+        # 不能退回「+」的十字画法，也不能用矢量 conic-gradient 破坏风格统一
+        self.assertNotIn("i::before", block, msg="不应再用 ::before 画十字竖条")
+        self.assertNotIn("conic-gradient", block, msg="不应再用矢量色轮，与原版图标风格不符")
 
-        after = self.css[self.css.index("#qq7-root .qq7-colorbtn i::after") :][:400]
-        self.assertIn("border-radius: 50%", after, msg="中心点应为圆形")
+    def test_palette_icon_asset_is_16px(self) -> None:
+        """调色盘图标必须是 16×16，与原版图标网格一致。"""
+        import struct
+        path = ROOT / "theme" / "qq7-palette.png"
+        self.assertTrue(path.is_file(), msg="缺少 theme/qq7-palette.png")
+        data = path.read_bytes()
+        self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n", msg="不是合法 PNG")
+        width, height = struct.unpack(">II", data[16:24])
+        self.assertEqual((width, height), (16, 16), msg="图标必须是 16×16")
 
     def test_skin_button_label_describes_skin_not_color(self) -> None:
         """按钮无障碍名称应描述「换肤」而不是「颜色编辑 +」。"""

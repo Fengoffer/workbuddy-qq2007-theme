@@ -1477,35 +1477,15 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
   background: linear-gradient(180deg, var(--qq7-c-D3E9FA, #d3e9fa), var(--qq7-c-E6F3FD, #e6f3fd));
 }
 
-/* 换肤图标：16×16 的四色色轮 + 白色中心点，读作「更换皮肤 / 配色」。
-   纯 CSS 绘制（conic-gradient），不引入新位图，缩放到任意尺寸都清晰。
-   四象限硬边而非渐变，保证 16px 下每块颜色依然可分。 */
+/* 换肤图标：16×16 像素画调色盘（qq7-palette.png）。
+   按 QQ2007 原版图标的画法绘制——黑色描边 + 平涂色块、无渐变、无抗锯齿，
+   与 qq7-icons.png 里那套 16px 图标同一风格；
+   image-rendering: pixelated 保证高分屏上仍是硬边像素，不被插值糊掉。 */
 #qq7-root .qq7-colorbtn i {
-  position: relative;
-  width: 14px; height: 14px;
+  width: 16px; height: 16px;
   display: block;
-  border-radius: 50%;
-  border: 1px solid var(--qq7-c-17436B, #17436b);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, .75);
-  background: conic-gradient(
-    #f5c518 0deg 90deg,     /* 沙漠黄 */
-    #35b84a 90deg 180deg,   /* 苹果绿 */
-    #2a7fe0 180deg 270deg,  /* 天际蓝 */
-    #b44ad6 270deg 360deg   /* 贵族紫 */
-  );
-  overflow: hidden;
-}
-
-/* 中心白点：色轮的心，也是 QQ2007 时代「调色板」的经典画法 */
-#qq7-root .qq7-colorbtn i::after {
-  content: "";
-  position: absolute;
-  left: 50%; top: 50%;
-  width: 5px; height: 5px;
-  margin: -2.5px 0 0 -2.5px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 1px rgba(23, 67, 107, .55);
+  background: url("./qq7-palette.png") center / 16px 16px no-repeat;
+  image-rendering: pixelated;
 }
 
 /* 色板菜单（QQ2007 菜单配色：底色 #FAFAFA、悬停 #CFE7FF、文字 #071E81） */
