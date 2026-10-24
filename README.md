@@ -37,6 +37,22 @@
 | --- |
 | ![宠物举牌](docs/images/pet-sign.png) |
 
+### 换肤（1.3.0 新增）
+
+| 颜色编辑菜单 | 自定义色调 / 亮度 |
+| --- | --- |
+| ![换肤菜单](docs/images/skin-menu.png) | ![自定义取色](docs/images/skin-picker.png) |
+
+六种官方配色（取自 QQ2007 正式版安装包逆向的色相常量表）：
+
+| 天际蓝（默认） | 贵族紫 | 水晶蓝 |
+| --- | --- | --- |
+| ![默认](docs/images/skin-default.png) | ![贵族紫](docs/images/skin-purple.png) | ![水晶蓝](docs/images/skin-cyan.png) |
+
+| 苹果绿 | 沙漠黄 | 玫瑰红 |
+| --- | --- | --- |
+| ![苹果绿](docs/images/skin-green.png) | ![沙漠黄](docs/images/skin-yellow.png) | ![玫瑰红](docs/images/skin-red.png) |
+
 ## 功能
 
 ### 1. 完整的 QQ 2007 客户端外壳

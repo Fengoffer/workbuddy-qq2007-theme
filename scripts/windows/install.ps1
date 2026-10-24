@@ -160,7 +160,7 @@ $meta = [ordered]@{
   indexTargetSize = $target
   asarSha256 = (Get-FileHash $asar -Algorithm SHA256).Hash
   indexSha256 = (Get-FileHash $index -Algorithm SHA256).Hash
-  themeVersion = "1.3.12"
+  themeVersion = "1.3.13"
 }
 $meta | ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $backup "metadata.json")
 Write-Host "备份目录: $backup"
