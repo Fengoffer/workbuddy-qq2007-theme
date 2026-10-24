@@ -1442,14 +1442,14 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
 }
 
 
-/* ---------- 14. QQ 2007 换肤：`+` 颜色编辑按钮 / 色板菜单 / 自定义取色 ----------
+/* ---------- 14. QQ 2007 换肤：换肤按钮 / 色板菜单 / 自定义取色 ----------
    忠实还原 QQ2007 正式版主面板右上角的「颜色编辑」：
    菜单顺序 颜色恢复 | 贵族紫 | 水晶蓝 | 天际蓝 | 苹果绿 | 沙漠黄 | 玫瑰红 | 自定义
    色相取自 QQ2007 正式版 QQ.exe .rdata 预设表（55/127/202/274/346，210 为默认天际蓝）。
    --qq7-c-XXXXXX 令牌由 qq2007-chrome.js 在运行时按色相旋转改写；
    每个 var() 都带原始色值回退，脚本未运行 / 关闭皮肤时界面与改动前完全一致。 */
 
-/* 颜色编辑按钮：紧贴菜单栏「原版」右侧，与菜单项同一行。
+/* 换肤按钮：紧贴菜单栏「原版」右侧，与菜单项同一行。
    不用 margin-left: auto —— 那会把按钮推到整行最右端，与「原版」隔开大片空白。
    菜单栏空白处是可拖拽区，按钮必须自己声明 no-drag，否则点不动。 */
 #qq7-root .qq7-colorbtn {
@@ -1477,21 +1477,36 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
   background: linear-gradient(180deg, var(--qq7-c-D3E9FA, #d3e9fa), var(--qq7-c-E6F3FD, #e6f3fd));
 }
 
-/* 用两条伪元素画 QQ2007 原版 16×16 的十字「+」，避免引入新位图 */
+/* 换肤图标：16×16 的四色色轮 + 白色中心点，读作「更换皮肤 / 配色」。
+   纯 CSS 绘制（conic-gradient），不引入新位图，缩放到任意尺寸都清晰。
+   四象限硬边而非渐变，保证 16px 下每块颜色依然可分。 */
 #qq7-root .qq7-colorbtn i {
   position: relative;
-  width: 11px; height: 11px;
+  width: 14px; height: 14px;
   display: block;
+  border-radius: 50%;
+  border: 1px solid var(--qq7-c-17436B, #17436b);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .75);
+  background: conic-gradient(
+    #f5c518 0deg 90deg,     /* 沙漠黄 */
+    #35b84a 90deg 180deg,   /* 苹果绿 */
+    #2a7fe0 180deg 270deg,  /* 天际蓝 */
+    #b44ad6 270deg 360deg   /* 贵族紫 */
+  );
+  overflow: hidden;
 }
-#qq7-root .qq7-colorbtn i::before,
+
+/* 中心白点：色轮的心，也是 QQ2007 时代「调色板」的经典画法 */
 #qq7-root .qq7-colorbtn i::after {
   content: "";
   position: absolute;
-  background: var(--qq7-c-17436B, #17436b);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, .7);
+  left: 50%; top: 50%;
+  width: 5px; height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(23, 67, 107, .55);
 }
-#qq7-root .qq7-colorbtn i::before { left: 4px; top: 0; width: 3px; height: 11px; }
-#qq7-root .qq7-colorbtn i::after  { left: 0; top: 4px; width: 11px; height: 3px; }
 
 /* 色板菜单（QQ2007 菜单配色：底色 #FAFAFA、悬停 #CFE7FF、文字 #071E81） */
 /* 菜单栏下沿 = 标题栏 65px + 菜单栏 29px = 94px。

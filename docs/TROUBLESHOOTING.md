@@ -75,9 +75,9 @@ bash scripts/macos/uninstall.sh --restore-asar ~/WorkBuddy/QQ2007ThemeBackups/<�
 ### 通知音不是 QQ 滴滴
 WorkBuddy 升级后可能改了通知音路径。当前只拦截 `sounds/*.wav`、`audio.src`、`Audio`、`fetch` 等路径；如失效请提 Issue 并附新版本号。
 
-### 点了菜单栏「+」没反应 / 菜单不出来
+### 点了菜单栏的换肤图标（色轮）没反应 / 菜单不出来
 
-「+」是颜色编辑按钮（位于菜单栏「原版」右侧），属于 1.3.0 新增功能。
+换肤按钮是菜单栏「原版」右侧那个**四色色轮**图标，点开是配色菜单，属于 1.3.0 起提供的功能。
 
 1. 确认版本：安装目录里 `grep -c qq7-colorbtn theme/qq2007-chrome.js` 应大于 0；
 2. 确认注入生效：点一下窗口任意处让主题重新初始化，或按 `Cmd+R` 刷新；

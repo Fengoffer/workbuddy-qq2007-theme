@@ -380,6 +380,27 @@ class ThemeStaticTests(unittest.TestCase):
         start = self.css.index("#qq7-root .qq7-colormenu {")
         block = self.css[start : start + 300]
         self.assertIn("top: 94px", block)
+    def test_skin_button_icon_is_color_wheel_not_plus(self) -> None:
+        """换肤按钮必须是色轮图标，不能再是「+」十字。
+
+        「+」是原版颜色编辑的入口样式，用户明确要求改成换肤图标；
+        这里锁住 conic-gradient 色轮与中心白点，防止回退成加号。
+        """
+        start = self.css.index("#qq7-root .qq7-colorbtn i {")
+        block = self.css[start : start + 900]
+        self.assertIn("conic-gradient", block, msg="换肤图标必须是色轮")
+        self.assertIn("border-radius: 50%", block)
+        # 「+」靠两条伪元素竖横条实现；色轮只允许 ::after 画中心点
+        self.assertNotIn("i::before", block, msg="色轮图标不应再用 ::before 画十字竖条")
+
+        after = self.css[self.css.index("#qq7-root .qq7-colorbtn i::after") :][:400]
+        self.assertIn("border-radius: 50%", after, msg="中心点应为圆形")
+
+    def test_skin_button_label_describes_skin_not_color(self) -> None:
+        """按钮无障碍名称应描述「换肤」而不是「颜色编辑 +」。"""
+        self.assertIn('title="更换皮肤配色"', self.js)
+        self.assertIn('aria-label="更换皮肤配色"', self.js)
+
 
 if __name__ == "__main__":
     unittest.main()
