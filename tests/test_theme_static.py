@@ -306,9 +306,9 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn("applyTheme()", self.js[start:end])
 
     def test_color_button_is_not_drag_region(self) -> None:
-        """「+」按钮必须排除在拖拽 / 双击热区之外，否则点不动。"""
+        """换肤按钮必须排除在拖拽 / 双击热区之外，否则点不动。"""
         self.assertIn(".qq7-colorbtn", self.js)
-        self.assertIn('class="qq7-colorbtn"', self.js)
+        self.assertRegex(self.js, r'class="qq7-colorbtn[^"]*"', msg="找不到换肤按钮标记")
         self.assertIn("aria-haspopup=\"menu\"", self.js)
 
 
@@ -319,7 +319,7 @@ class ThemeStaticTests(unittest.TestCase):
         """「+」按钮必须能被 Tab 聚焦并用键盘打开，否则键盘用户完全用不了换肤。"""
         self.assertRegex(
             self.js,
-            r'class="qq7-colorbtn"[^>]*tabindex="0"',
+            r'class="qq7-colorbtn[^"]*"[^>]*tabindex="0"',
             msg="颜色按钮必须 tabindex=\"0\"，不能用 -1 把键盘用户挡在外面",
         )
         start = self.js.index("colorBtnEl.addEventListener(\"keydown\"")
@@ -368,12 +368,12 @@ class ThemeStaticTests(unittest.TestCase):
         bar_start = self.js.index('<div class="qq7-menubar">')
         bar_end = self.js.index("</div>", self.js.index("MENU.map", bar_start)) + 400
         menubar = self.js[bar_start:bar_end]
-        self.assertIn('class="qq7-colorbtn"', menubar, msg="换肤按钮必须在菜单栏内")
+        self.assertRegex(menubar, r'class="qq7-colorbtn[^"]*"', msg="换肤按钮必须在菜单栏内")
 
         title_start = self.js.index('<div class="qq7-titlebar">')
         title_end = self.js.index('<div class="qq7-menubar">', title_start)
         titlebar = self.js[title_start:title_end]
-        self.assertNotIn('class="qq7-colorbtn"', titlebar, msg="标题栏不应再出现换肤按钮")
+        self.assertNotRegex(titlebar, r'class="qq7-colorbtn', msg="标题栏不应再出现换肤按钮")
 
     def test_color_menu_anchors_below_menubar(self) -> None:
         """弹出菜单贴菜单栏下沿（94px = 65 标题栏 + 29 菜单栏），不是标题栏下沿。"""
@@ -414,6 +414,24 @@ class ThemeStaticTests(unittest.TestCase):
         """按钮无障碍名称应描述「换肤」而不是「颜色编辑 +」。"""
         self.assertIn('title="更换皮肤配色"', self.js)
         self.assertIn('aria-label="更换皮肤配色"', self.js)
+
+    def test_skin_button_has_text_label_like_other_menus(self) -> None:
+        """换肤按钮必须与其它菜单项同形态：图标 + 文字，不能只是光秃秃一个图标。"""
+        start = self.js.index('class="qq7-colorbtn')
+        end = self.js.index("</span>", start)
+        markup = self.js[start : end + 200]
+        self.assertIn("<i></i>", markup, msg="缺少图标节点")
+        self.assertIn("<span>换肤</span>", markup, msg="缺少「换肤」文字标签")
+        # 复用菜单项类，继承字号/颜色/间距，避免视觉上格格不入
+        self.assertIn("qq7-colorbtn qq7-menu-item", markup,
+                      msg="换肤按钮应同时带 .qq7-menu-item 以复用菜单项样式")
+
+    def test_skin_button_does_not_hardcode_icon_only_size(self) -> None:
+        """按钮宽度/高度应交给菜单项样式决定，不能再写死 22px 图标尺寸。"""
+        start = self.css.index("#qq7-root .qq7-colorbtn {")
+        block = self.css[start : start + 400]
+        self.assertNotIn("width: 22px", block, msg="不应写死按钮宽度，应由内容撑开")
+        self.assertIn("flex-shrink: 0", block)
 
 
 if __name__ == "__main__":

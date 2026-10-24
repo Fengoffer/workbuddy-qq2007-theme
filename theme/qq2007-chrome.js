@@ -768,7 +768,7 @@
       </div>
       <div class="qq7-menubar">
         ${MENU.map((m) => `<span class="qq7-menu-item" data-action="${m.action}">${icon(m.icon)}<span>${m.label}</span></span>`).join("")}
-        <span class="qq7-colorbtn" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" title="更换皮肤配色" aria-label="更换皮肤配色"><i></i></span>
+        <span class="qq7-colorbtn qq7-menu-item" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" title="更换皮肤配色" aria-label="更换皮肤配色"><i></i><span>换肤</span></span>
       </div>
       <div class="qq7-friend" id="qq7-friend-panel">${friendPanelHtml()}</div>
       <div class="qq7-statusbar">

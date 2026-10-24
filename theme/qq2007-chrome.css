@@ -1449,31 +1449,28 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
    --qq7-c-XXXXXX 令牌由 qq2007-chrome.js 在运行时按色相旋转改写；
    每个 var() 都带原始色值回退，脚本未运行 / 关闭皮肤时界面与改动前完全一致。 */
 
-/* 换肤按钮：紧贴菜单栏「原版」右侧，与菜单项同一行。
-   不用 margin-left: auto —— 那会把按钮推到整行最右端，与「原版」隔开大片空白。
-   菜单栏空白处是可拖拽区，按钮必须自己声明 no-drag，否则点不动。 */
+/* 换肤按钮：与其它菜单项同一形态（图标 + 文字），紧贴「原版」右侧。
+   同时带 .qq7-menu-item 类继承通用样式；这里只覆盖布局差异：
+   - 不用 margin-left: auto，避免被推到整行最右端与「原版」隔开；
+   - 图标是自带位图（衣服），不像其它项用 qq7-icons.png 精灵，故单独给尺寸；
+   - 菜单栏空白处是可拖拽区，按钮必须自己声明 no-drag，否则点不动。 */
 #qq7-root .qq7-colorbtn {
   -webkit-app-region: no-drag;
   position: relative;
   z-index: 2;
   margin-left: 2px;
-  width: 22px; height: 22px;
-  display: grid; place-items: center;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  cursor: pointer;
-  flex: 0 0 22px;
   flex-shrink: 0;
-  /* 极窄窗口下菜单项会挤占空间：按钮 sticky 定位到菜单栏右缘，保证始终可见可点 */
+  gap: 4px;
 }
 
-#qq7-root .qq7-colorbtn:hover {
+#qq7-root .qq7-colorbtn:hover,
+#qq7-root .qq7-colorbtn[aria-expanded="true"] {
   border-color: var(--qq7-c-7F9DB9, #7f9db9);
   background: linear-gradient(180deg, #ffffff, var(--qq7-c-E6F3FD, #e6f3fd) 50%, var(--qq7-c-D3E9FA, #d3e9fa));
+  box-shadow: inset 0 1px #fff;
 }
 
 #qq7-root .qq7-colorbtn[aria-expanded="true"] {
-  border-color: var(--qq7-c-7F9DB9, #7f9db9);
   background: linear-gradient(180deg, var(--qq7-c-D3E9FA, #d3e9fa), var(--qq7-c-E6F3FD, #e6f3fd));
 }
 
@@ -1484,6 +1481,7 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
    image-rendering: pixelated 保证高分屏上仍是硬边像素，不被插值糊掉。 */
 #qq7-root .qq7-colorbtn i {
   width: 16px; height: 16px;
+  flex: 0 0 16px;
   display: block;
   /* 美术图按 32px 绘制、按 16px 显示：Retina 下每个像素清晰，
      非 Retina 由浏览器降采样，轮廓仍可辨。 */
