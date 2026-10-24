@@ -1573,11 +1573,21 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
 }
 
 /* 自定义取色：还原 QQ2007「皮肤颜色选择」的 色调 / 亮度 双滑条 + 彩虹色调条 */
+/* 取色面板是 role="menu" 的兄弟节点（ARIA 要求 menu 内只能有 menuitem），
+   因此不能靠 margin 在菜单流里定位，必须绝对定位并跟随菜单的 left 锚点。 */
 #qq7-root .qq7-picker {
-  margin: 2px 2px 4px;
+  position: absolute;
+  top: 94px;
+  left: var(--qq7-colormenu-x, 8px);
+  z-index: 6;
+  width: 232px;
+  box-sizing: border-box;
   padding: 6px 6px 5px;
   border: 1px solid var(--qq7-c-C3D8E8, #c3d8e8);
   background: linear-gradient(180deg, #ffffff, var(--qq7-c-F4F9FD, #f4f9fd));
+  box-shadow: 2px 2px 0 rgba(90, 120, 150, .28), inset 0 0 0 1px #fff;
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
 }
 
 #qq7-root .qq7-picker[hidden] { display: none; }
@@ -1662,6 +1672,19 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
 }
 
 #qq7-root .qq7-picker-btn:hover { background: linear-gradient(180deg, #fff, var(--qq7-c-DCEEFC, #dceefc)); }
+/* 键盘可达性：取色面板里的按钮与滑条都必须有可见焦点，
+   否则 Tab 到这里完全看不出焦点在哪（和菜单项同一套视觉语言）。 */
+#qq7-root .qq7-picker-btn:focus-visible {
+  outline: 1px dotted var(--qq7-c-071E81, #071e81);
+  outline-offset: 1px;
+  background: linear-gradient(180deg, var(--qq7-c-E6F3FD, #e6f3fd), #fff);
+}
+
+#qq7-root .qq7-picker input[type="range"]:focus-visible {
+  outline: 1px dotted var(--qq7-c-071E81, #071e81);
+  outline-offset: 2px;
+}
+
 #qq7-root .qq7-picker-btn:active { background: linear-gradient(180deg, var(--qq7-c-D3E9FA, #d3e9fa), #fff); }
 
 /* 皮肤关闭时配色引擎也要停手，交给原版界面 */

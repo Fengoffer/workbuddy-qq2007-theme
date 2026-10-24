@@ -490,6 +490,52 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertEqual(css_tokens - js_tokens, set(), msg="CSS 有令牌未纳入换色表（会漏色）")
         self.assertEqual(js_tokens - css_tokens, set(), msg="JS 表有 CSS 不再使用的死令牌")
 
+    def test_menu_has_accessible_name(self) -> None:
+        """role="menu" 必须有可访问名称，否则屏幕阅读器只读「菜单」。"""
+        start = self.js.index('colorMenuEl.setAttribute("role", "menu")')
+        body = self.js[start : start + 400]
+        self.assertIn('aria-label", "更换皮肤配色"', body)
+
+    def test_picker_outside_menu_for_aria(self) -> None:
+        """自定义取色面板必须是菜单的兄弟节点。
+
+        role="menu" 的子节点只能是 menuitem；面板里是 input/button，
+        放进去违反 ARIA 规范，屏幕阅读器会误报。
+        """
+        self.assertIn("pickerEl = document.createElement", self.js)
+        self.assertIn("root.appendChild(pickerEl)", self.js)
+        # 面板不得再被塞进 colorMenuEl 的 innerHTML
+        start = self.js.index("colorMenuEl.innerHTML =")
+        line = self.js[start : self.js.index("\n", start)]
+        self.assertNotIn("qq7-picker", line, msg="取色面板不应再塞进 role=menu 内")
+
+    def test_selection_returns_focus_to_button(self) -> None:
+        """键盘选中配色后，焦点必须回到按钮，不能掉到 body。"""
+        start = self.js.index("function selectPreset")
+        body = self.js[start : self.js.index("function syncColorMenuState", start)]
+        self.assertIn("colorBtnEl.focus()", body)
+
+    def test_menu_separator_has_role(self) -> None:
+        """菜单分隔线需要 role="separator"，不能是 menu 里的无名子节点。"""
+        self.assertIn('qq7-colormenu-sep" role="separator"', self.js)
+
+    def test_picker_handlers_bound_to_picker_element(self) -> None:
+        """取色面板独立后，click/input 必须绑在 pickerEl 上，否则拖滑条无反应。"""
+        self.assertIn('pickerEl.addEventListener("click"', self.js)
+        self.assertIn('pickerEl.addEventListener("input"', self.js)
+
+    def test_picker_clamped_in_narrow_window(self) -> None:
+        """取色面板在窄窗口下必须夹住，不能溢出窗口右缘（菜单已有同样处理）。"""
+        start = self.js.index("function selectPreset")
+        body = self.js[start : self.js.index("function syncColorMenuState", start)]
+        self.assertIn("pickerLeft", body, msg="取色面板需要独立计算 left")
+        self.assertIn("hostRect.width - pickerWidth - 6", body, msg="缺少溢出夹取")
+
+    def test_picker_controls_have_focus_style(self) -> None:
+        """取色面板的按钮与滑条必须有可见焦点，否则键盘用户看不到焦点。"""
+        self.assertIn(".qq7-picker-btn:focus-visible", self.css)
+        self.assertIn('.qq7-picker input[type="range"]:focus-visible', self.css)
+
 
 if __name__ == "__main__":
     unittest.main()

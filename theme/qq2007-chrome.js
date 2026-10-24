@@ -2446,7 +2446,7 @@
         + `<span>${item.label}</span></div>`;
     }).join("");
     return rows
-      + `<div class="qq7-colormenu-sep"></div>`
+      + `<div class="qq7-colormenu-sep" role="separator"></div>`
       + `<div class="qq7-colormenu-item${!matchedPreset ? " is-current" : ""}" data-color="custom" role="menuitem" tabindex="-1">`
       + `<span class="qq7-colormenu-chip" style="background:linear-gradient(135deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f)"></span>`
       + `<span>自定义</span><span class="qq7-colormenu-hint">色调/亮度</span></div>`;
@@ -2475,14 +2475,14 @@
 
   let colorMenuEl = null;
   let colorBtnEl = null;
+  let pickerEl = null;      // 自定义取色面板（菜单的兄弟节点，见上方 ARIA 说明）
   let pickerDraft = null;
 
   function closeColorMenu() {
     if (colorMenuEl) colorMenuEl.hidden = true;
     if (colorBtnEl) colorBtnEl.setAttribute("aria-expanded", "false");
     if (pickerDraft) {
-      const picker = colorMenuEl && colorMenuEl.querySelector(".qq7-picker");
-      if (picker) picker.hidden = true;
+      if (pickerEl) pickerEl.hidden = true;
       pickerDraft = null;
       applyTheme();   // 丢弃未确认的自定义预览
       return;
@@ -2494,8 +2494,7 @@
     if (!colorMenuEl) return;
     // 每次打开都回到已保存的配色，避免上一次「自定义」的未确认预览残留
     applyTheme();
-    const picker = colorMenuEl.querySelector(".qq7-picker");
-    if (picker) picker.hidden = true;
+    if (pickerEl) pickerEl.hidden = true;
     pickerDraft = null;
     syncColorMenuState();
     colorMenuEl.hidden = false;
@@ -2509,6 +2508,7 @@
       // 防止菜单超出窗口右边缘
       if (left + menuWidth > host.width - 6) left = Math.max(6, host.width - menuWidth - 6);
       colorMenuEl.style.setProperty("--qq7-colormenu-x", Math.round(left) + "px");
+      if (pickerEl) pickerEl.style.setProperty("--qq7-colormenu-x", Math.round(left) + "px");
     }
     // 打开后把焦点交给当前配色项，键盘用户可直接用方向键选择
     const items = [...colorMenuEl.querySelectorAll(".qq7-colormenu-item")];
@@ -2521,11 +2521,23 @@
 
   function selectPreset(id) {
     if (id === "custom") {
-      const picker = colorMenuEl && colorMenuEl.querySelector(".qq7-picker");
-      if (picker) {
-        picker.hidden = false;
-        picker.innerHTML = pickerHtml();
+      if (pickerEl) {
+        pickerEl.innerHTML = pickerHtml();
         pickerDraft = { hue: readTheme().custom ? readTheme().hue : HUE_BASE, light: readTheme().custom ? (readTheme().light || 0) : 0 };
+        // 面板贴在菜单下方（菜单高度随内容变化，实测后定位）
+        pickerEl.hidden = false;
+        const menuRect = colorMenuEl.getBoundingClientRect();
+        const hostRect = root.getBoundingClientRect();
+        const pickerWidth = pickerEl.offsetWidth || 232;
+        // 窄窗口下必须夹住，否则面板会溢出窗口右缘（菜单已做同样处理）
+        let pickerLeft = menuRect.left - hostRect.left;
+        if (pickerLeft + pickerWidth > hostRect.width - 6) {
+          pickerLeft = Math.max(6, hostRect.width - pickerWidth - 6);
+        }
+        pickerEl.style.left = Math.round(pickerLeft) + "px";
+        pickerEl.style.top = Math.round(menuRect.bottom) + "px";
+        const first = pickerEl.querySelector(".qq7-hue");
+        if (first) first.focus();
       }
       return;
     }
@@ -2538,6 +2550,9 @@
     applyTheme(theme);
     syncColorMenuState();
     closeColorMenu();
+    // 键盘选择后焦点必须回到按钮：closeColorMenu 会把菜单隐藏，
+    // 焦点随之落到 body，用户失去位置（屏幕阅读器也不知身在何处）。
+    if (colorBtnEl) colorBtnEl.focus();
   }
 
   function syncColorMenuState() {
@@ -2553,8 +2568,17 @@
     colorMenuEl.className = "qq7-colormenu";
     colorMenuEl.hidden = true;
     colorMenuEl.setAttribute("role", "menu");
-    colorMenuEl.innerHTML = `<div class="qq7-colormenu-list">${colorMenuHtml()}</div><div class="qq7-picker" hidden></div>`;
+    // role=menu 必须有可访问名称，否则屏幕阅读器只读「菜单」
+    colorMenuEl.setAttribute("aria-label", "更换皮肤配色");
+    // 注意：自定义取色面板（滑条/按钮）不能放进 role="menu" 里——
+    // menu 的子节点必须是 menuitem，放 input/button 违反 ARIA 规范，
+    // 屏幕阅读器会误报。所以取色面板作为菜单的兄弟节点存在。
+    colorMenuEl.innerHTML = `<div class="qq7-colormenu-list" role="none">${colorMenuHtml()}</div>`;
+    pickerEl = document.createElement("div");
+    pickerEl.className = "qq7-picker";
+    pickerEl.hidden = true;
     root.appendChild(colorMenuEl);
+    root.appendChild(pickerEl);
 
     colorBtnEl.addEventListener("click", (event) => {
       event.preventDefault();
@@ -2568,18 +2592,24 @@
       }
     });
 
+    // 菜单本体只负责「选预设」
     colorMenuEl.addEventListener("click", (event) => {
       const item = event.target.closest && event.target.closest("[data-color]");
       if (item) { selectPreset(item.dataset.color); return; }
+    });
+
+    // 取色面板是菜单的兄弟节点（ARIA 要求），所以它的事件必须绑在自己身上
+    pickerEl.addEventListener("click", (event) => {
       const action = event.target.closest && event.target.closest("[data-picker]");
       if (!action) return;
       event.preventDefault();
+      event.stopPropagation();
       if (action.dataset.picker === "cancel") {
-        const picker = colorMenuEl.querySelector(".qq7-picker");
-        if (picker) picker.hidden = true;
+        pickerEl.hidden = true;
         pickerDraft = null;
         // 取消必须把实时预览退回到已保存的配色，否则界面会停在未确认的颜色上
         applyTheme();
+        if (colorBtnEl) colorBtnEl.focus();
         return;
       }
       if (action.dataset.picker === "ok" && pickerDraft) {
@@ -2587,20 +2617,21 @@
         applyTheme({ hue: pickerDraft.hue, light: pickerDraft.light, custom: true });
         syncColorMenuState();
         closeColorMenu();
+        if (colorBtnEl) colorBtnEl.focus();
       }
     });
 
-    colorMenuEl.addEventListener("input", (event) => {
+    pickerEl.addEventListener("input", (event) => {
       const input = event.target;
       if (!input || !input.classList) return;
       if (!pickerDraft) return;
       if (input.classList.contains("qq7-hue")) {
         pickerDraft.hue = Number(input.value);
-        const tag = colorMenuEl.querySelector("[data-hue-val]");
+        const tag = pickerEl.querySelector("[data-hue-val]");
         if (tag) tag.textContent = pickerDraft.hue + "°";
       } else if (input.classList.contains("qq7-light")) {
         pickerDraft.light = Number(input.value);
-        const tag = colorMenuEl.querySelector("[data-light-val]");
+        const tag = pickerEl.querySelector("[data-light-val]");
         if (tag) tag.textContent = (pickerDraft.light > 0 ? "+" : "") + pickerDraft.light + "%";
       }
       // 实时预览（不落盘，取消即丢弃）
@@ -2673,7 +2704,7 @@
     // 点空白处关闭（QQ2007 菜单也是点别处收起）
     document.addEventListener("pointerdown", (event) => {
       if (colorMenuEl.hidden) return;
-      if (colorMenuEl.contains(event.target) || colorBtnEl.contains(event.target)) return;
+      if (colorMenuEl.contains(event.target) || pickerEl.contains(event.target) || colorBtnEl.contains(event.target)) return;
       closeColorMenu();
     }, true);
   }
