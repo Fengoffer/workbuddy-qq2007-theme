@@ -2347,11 +2347,16 @@
     return ("000000" + ((to(r) << 16) | (to(g) << 8) | to(b)).toString(16).toUpperCase()).slice(-6);
   }
 
-  /* 按目标色相旋转单个令牌：只改 H，保持 S/L；低饱和（灰白）保持原值 */
+  /* 按目标色相旋转单个令牌：只改 H，保持 S/L。
+     以下情况保持原值不动，避免「看不见的偏色」：
+     - 低饱和（灰白）：旋转后与中性色无异，只会引入色偏；
+     - 极高亮度：8bit 量化下色相信息本就丢失，旋转只会得到噪声级的偏差。 */
   function rotateToken(hex, targetHue, lightShift) {
     const [r, g, b] = hexToRgb(hex);
     const [h, s, l] = rgbToHsl(r, g, b);
     if (s < 0.15) return "#" + hex;
+    // 亮度 >0.97 的近白色：色相通道差异不足 8 级，旋转没有视觉意义
+    if (l > 0.97 && !lightShift) return "#" + hex;
     const nl = Math.min(0.99, Math.max(0.02, l + lightShift));
     return "#" + hslToHex(h + (targetHue - HUE_BASE), s, nl);
   }

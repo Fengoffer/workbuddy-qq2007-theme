@@ -551,6 +551,28 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn('getElementById("qq7-theme-vars")', body)
         self.assertIn("themeStyle.remove()", body)
 
+    def test_near_white_tokens_not_rotated(self) -> None:
+        """近白色令牌不应参与色相旋转。
+
+        8bit 量化下近白色几乎没有色相信息，旋转只会得到噪声级偏色
+        （实测 FBFDFF 在 6 个预设下漂移 7 度，肉眼可见轻微偏色）。
+        """
+        start = self.js.index("function rotateToken")
+        body = self.js[start : self.js.index("function readTheme", start)]
+        self.assertIn("l > 0.97", body, msg="缺少近白色保护")
+        self.assertIn("if (s < 0.15)", body, msg="缺少低饱和保护")
+
+    def test_all_presets_have_valid_hues(self) -> None:
+        """六种预设色相必须与 QQ2007 逆向表一致，且在 0-359 范围内。"""
+        start = self.js.index("const COLOR_ITEMS = [")
+        block = self.js[start : self.js.index("];", start)]
+        pairs = re.findall(r'label:\s*"([^"]+)",\s*hue:\s*(\d+|HUE_BASE)', block)
+        self.assertEqual(len(pairs), 7, msg="应有 7 个配色项（含颜色恢复）")
+        for label, hue in pairs:
+            if hue == "HUE_BASE":
+                continue
+            self.assertTrue(0 <= int(hue) <= 359, msg=f"{label} 色相越界：{hue}")
+
 
 if __name__ == "__main__":
     unittest.main()
