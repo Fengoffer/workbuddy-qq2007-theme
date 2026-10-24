@@ -167,6 +167,21 @@ def main() -> int:
                     f"版本不一致：{rel} 的 themeVersion={match.group(1)}，CHANGELOG 最新版本={latest_version}"
                 )
 
+    # 5b. 版本链条自检：CHANGELOG 顶部版本必须有对应 tag，且指向某个提交。
+    # 只提示不报错：CI 也在未发布的分支上运行，此时 tag 合法地不存在。
+    if latest_version is not None:
+        tag_name = f"v{latest_version}"
+        tag_check = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"refs/tags/{tag_name}"],
+            cwd=ROOT,
+            capture_output=True,
+        )
+        if tag_check.returncode != 0:
+            print(
+                f"提示：CHANGELOG 顶部版本 {latest_version} 尚无对应 tag {tag_name}；"
+                "如已发布请补 tag，未发布可忽略。"
+            )
+
     # 6. 主题资源与安装器复制清单对齐
     theme_dir = ROOT / "theme"
     theme_assets = sorted(p.name for p in theme_dir.iterdir() if p.is_file())

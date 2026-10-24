@@ -81,7 +81,15 @@ bash scripts/macos/uninstall.sh
 1. 确认 `main` 工作区干净、CI 为绿；
 2. 把 `CHANGELOG.md` 顶部的 `## Unreleased` 改成 `## x.y.z (YYYY-MM-DD)` 并补全条目；
 3. 同步更新两个安装器的 `themeVersion`；
-4. 按 5.2 做发布前验证。
+4. **把发布所需的全部内容先提交完**——包括截图、Release 说明里要引用的图片、
+   文档改动。**tag 一旦创建，就不能再往里补内容**（见 5.7 的反例）；
+5. 按 5.2 做发布前验证。
+
+> **顺序不能反**：先提交内容 → 再打 tag → 再发 Release。
+> Release 说明里的图片链接通常指向 tag（如
+> `https://raw.githubusercontent.com/<repo>/vX.Y.Z/docs/images/xxx.png`），
+> 若图片在打 tag 之后才提交，链接会 404，且此时只能靠移动已发布的 tag 来补救——
+> 那是不规范的。
 
 ### 5.2 发布前验证清单
 
@@ -155,6 +163,41 @@ Gitee 会同步代码和 tag，但 Release 说明不会随 git push 自动出现
 - 在本机跑一次 `verify-install.sh`；
 - 关注两个仓库的 Issue；
 - 如果 WorkBuddy 发布新版本导致布局变化，按 [COMPATIBILITY.md](COMPATIBILITY.md) 处理。
+
+### 5.7 tag 规则与踩坑记录
+
+**已发布的 tag 必须视为不可变。** 不要用 `git tag -f` + `git push -f` 去移动它。
+
+理由：别人可能已经 clone、下载源码包或引用该 tag；移动会让同一版本号指向不同内容，
+版本失去意义。如果发布后才发现内容有问题，正确做法是：
+
+| 情况 | 处理方式 |
+| --- | --- |
+| 缺内容（漏了截图 / 文档） | **补发新 patch 版本**（如 v1.3.12 → v1.3.14），在说明里写清两个版本的关系 |
+| 有代码缺陷 | 补发 patch 版本，CHANGELOG 标注修复项 |
+| Release 说明写错 | 直接编辑 Release 说明（改 notes 不动 tag），GitHub 用 `gh release edit`，Gitee 用 `--update` |
+
+**踩坑记录（v1.3.12 发布时实际发生）**：
+
+1. 先打了 tag、之后才提交换肤截图 → Release 里的图片链接 404；
+2. 为修图片把 `v1.3.12` 移动到新提交并 `force-push` —— 不该这么做；
+3. 结果 CHANGELOG 顶部变成 1.3.14 却没有任何 tag 指向它，版本链条断裂
+   （CI 只校验「CHANGELOG 顶部 ↔ 安装器 themeVersion」，**不校验 tag**，所以 CI 是绿的）。
+4. 事后补救：`v1.3.12` 保持冻结，为 HEAD 补打 `v1.3.14`，让三者对齐。
+
+**发布后自检**（这一组是 CI 覆盖不到的，必须手工确认）：
+
+```bash
+# CHANGELOG 顶部、安装器版本、HEAD、最新 tag 四者必须一致
+echo "CHANGELOG: $(grep -m1 '^## ' CHANGELOG.md | sed 's/## //')"
+echo "installer: $(grep -o '\"themeVersion\": \"[^\"]*\"' scripts/macos/install.sh)"
+echo "HEAD:      $(git rev-parse --short HEAD)"
+echo "tag:       $(git rev-list -n1 v$(grep -m1 '^## ' CHANGELOG.md | sed 's/## \([0-9.]*\).*/\1/') | cut -c1-8)"
+
+# Release 里引用的图片必须真的能访问（返回 200 且大小合理）
+curl -s -o /dev/null -w "status=%{http_code} size=%{size_download}\n" \
+  "https://raw.githubusercontent.com/<owner>/<repo>/vX.Y.Z/docs/images/skin-menu.png"
+```
 
 ## 6. CI 做什么
 
