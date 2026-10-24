@@ -380,28 +380,35 @@ class ThemeStaticTests(unittest.TestCase):
         start = self.css.index("#qq7-root .qq7-colormenu {")
         block = self.css[start : start + 300]
         self.assertIn("top: 94px", block)
-    def test_skin_button_icon_is_pixel_palette(self) -> None:
-        """换肤按钮用 16×16 像素画调色盘，而不是「+」或 CSS 矢量图形。
+    def test_skin_button_icon_is_pixel_shirt(self) -> None:
+        """换肤按钮用 16×16 像素画小衣服，而不是「+」或 CSS 矢量图形。
 
+        QQ 换肤 = 给客户端换衣服，所以用 T 恤作图标；
         必须与 qq7-icons.png 那套图标的画风一致：位图 + pixelated 渲染。
         """
         start = self.css.index("#qq7-root .qq7-colorbtn i {")
         block = self.css[start : start + 600]
-        self.assertIn('url("./qq7-palette.png")', block, msg="换肤图标必须是调色盘位图")
-        self.assertIn("image-rendering: pixelated", block, msg="像素图标必须禁用插值")
+        self.assertIn('url("./qq7-skin-shirt.png")', block, msg="换肤图标必须是衣服位图")
+        # 美术图绘制在 32px、显示为 16px，因此不能用 pixelated（会把降采样边缘切碎）
+        self.assertNotIn("image-rendering: pixelated", block,
+                         msg="32px 美术图按 16px 显示时不应开启 pixelated")
         # 不能退回「+」的十字画法，也不能用矢量 conic-gradient 破坏风格统一
         self.assertNotIn("i::before", block, msg="不应再用 ::before 画十字竖条")
         self.assertNotIn("conic-gradient", block, msg="不应再用矢量色轮，与原版图标风格不符")
 
-    def test_palette_icon_asset_is_16px(self) -> None:
-        """调色盘图标必须是 16×16，与原版图标网格一致。"""
+    def test_shirt_icon_asset_is_16px(self) -> None:
+        """换肤图标必须是 16×16，与原版图标网格一致。"""
         import struct
-        path = ROOT / "theme" / "qq7-palette.png"
-        self.assertTrue(path.is_file(), msg="缺少 theme/qq7-palette.png")
+        path = ROOT / "theme" / "qq7-skin-shirt.png"
+        self.assertTrue(path.is_file(), msg="缺少 theme/qq7-skin-shirt.png")
         data = path.read_bytes()
         self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n", msg="不是合法 PNG")
         width, height = struct.unpack(">II", data[16:24])
-        self.assertEqual((width, height), (16, 16), msg="图标必须是 16×16")
+        self.assertIn((width, height), ((16, 16), (32, 32)),
+                      msg="图标应为 16×16 或 32×32（后者供高分屏）")
+        # 逻辑显示尺寸固定 16px，与菜单栏其它图标对齐
+        css_start = self.css.index("#qq7-root .qq7-colorbtn i {")
+        self.assertIn("width: 16px; height: 16px", self.css[css_start : css_start + 300])
 
     def test_skin_button_label_describes_skin_not_color(self) -> None:
         """按钮无障碍名称应描述「换肤」而不是「颜色编辑 +」。"""

@@ -86,7 +86,7 @@ cat > "$BK/metadata.json" <<EOF
   "indexTargetSize": $TARGET,
   "asarSha256": "$(shasum -a 256 "$ASAR" | awk '{print $1}')",
   "indexSha256": "$(shasum -a 256 "$INDEX" | awk '{print $1}')",
-  "themeVersion": "1.3.4"
+  "themeVersion": "1.3.5"
 }
 EOF
 shasum -a 256 "$ASAR" "$INDEX" > "$BK/SHA256.txt"
@@ -96,7 +96,7 @@ ASSETS="$UP/assets"
 mkdir -p "$ASSETS/qq7pet"
 COPIED=()
 for f in qq2008-skin.css qq2008-583-adapter.css qq2007-chrome.css qq2007-chrome.js qq2008-notify.js \
-         qq-penguin-user.png qq7-icons.png qq7-penguin.png qq7-show.png qq7-palette.png qq-message.wav qq-failure.wav; do
+         qq-penguin-user.png qq7-icons.png qq7-penguin.png qq7-show.png qq7-skin-shirt.png qq-message.wav qq-failure.wav; do
   cp "$THEME_DIR/$f" "$ASSETS/$f"
   COPIED+=("$f")
 done

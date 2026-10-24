@@ -92,7 +92,7 @@ if (Test-Path $index) {
 
 $assets = Join-Path $resources "app.asar.unpacked\renderer\assets"
 foreach ($f in @("qq2008-skin.css","qq2008-583-adapter.css","qq2007-chrome.css","qq2007-chrome.js","qq2008-notify.js",
-                 "qq-penguin-user.png","qq7-icons.png","qq7-penguin.png","qq7-show.png","qq7-palette.png","qq-message.wav","qq-failure.wav")) {
+                 "qq-penguin-user.png","qq7-icons.png","qq7-penguin.png","qq7-show.png","qq7-skin-shirt.png","qq-message.wav","qq-failure.wav")) {
   Remove-Item (Join-Path $assets $f) -Force -ErrorAction SilentlyContinue
 }
 Remove-Item (Join-Path $assets "qq7pet") -Recurse -Force -ErrorAction SilentlyContinue

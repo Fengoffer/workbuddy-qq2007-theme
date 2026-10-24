@@ -160,7 +160,7 @@ $meta = [ordered]@{
   indexTargetSize = $target
   asarSha256 = (Get-FileHash $asar -Algorithm SHA256).Hash
   indexSha256 = (Get-FileHash $index -Algorithm SHA256).Hash
-  themeVersion = "1.3.4"
+  themeVersion = "1.3.5"
 }
 $meta | ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $backup "metadata.json")
 Write-Host "备份目录: $backup"
@@ -168,7 +168,7 @@ Write-Host "备份目录: $backup"
 $assets = Join-Path $unpackedRenderer "assets"
 New-Item -ItemType Directory -Force -Path (Join-Path $assets "qq7pet") | Out-Null
 $files = @("qq2008-skin.css","qq2008-583-adapter.css","qq2007-chrome.css","qq2007-chrome.js","qq2008-notify.js",
-           "qq-penguin-user.png","qq7-icons.png","qq7-penguin.png","qq7-show.png","qq7-palette.png","qq-message.wav","qq-failure.wav")
+           "qq-penguin-user.png","qq7-icons.png","qq7-penguin.png","qq7-show.png","qq7-skin-shirt.png","qq-message.wav","qq-failure.wav")
 $copied = @()
 try {
   foreach ($f in $files) {

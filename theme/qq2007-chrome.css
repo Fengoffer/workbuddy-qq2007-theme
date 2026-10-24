@@ -1477,15 +1477,17 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
   background: linear-gradient(180deg, var(--qq7-c-D3E9FA, #d3e9fa), var(--qq7-c-E6F3FD, #e6f3fd));
 }
 
-/* 换肤图标：16×16 像素画调色盘（qq7-palette.png）。
+/* 换肤图标：16×16 像素画「小衣服」（qq7-skin-shirt.png）。
+   QQ 的换肤本质是给客户端换一件衣服，所以用 T 恤作图标语义。
    按 QQ2007 原版图标的画法绘制——黑色描边 + 平涂色块、无渐变、无抗锯齿，
    与 qq7-icons.png 里那套 16px 图标同一风格；
    image-rendering: pixelated 保证高分屏上仍是硬边像素，不被插值糊掉。 */
 #qq7-root .qq7-colorbtn i {
   width: 16px; height: 16px;
   display: block;
-  background: url("./qq7-palette.png") center / 16px 16px no-repeat;
-  image-rendering: pixelated;
+  /* 美术图按 32px 绘制、按 16px 显示：Retina 下每个像素清晰，
+     非 Retina 由浏览器降采样，轮廓仍可辨。 */
+  background: url("./qq7-skin-shirt.png") center / 16px 16px no-repeat;
 }
 
 /* 色板菜单（QQ2007 菜单配色：底色 #FAFAFA、悬停 #CFE7FF、文字 #071E81） */
