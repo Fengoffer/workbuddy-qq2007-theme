@@ -168,6 +168,7 @@ body.qq7-js-window-chrome #qq7-root .qq7-titlebar-jszone {
   align-items: center;
   gap: 2px;
   padding: 0 6px;
+  overflow: hidden;
   background: linear-gradient(180deg, #ffffff 0%, var(--qq7-c-F2F9FF, #f2f9ff) 45%, var(--qq7-c-DCEEFC, #dceefc) 100%);
   border-bottom: 1px solid var(--qq7-line);
   box-shadow: inset 0 1px #fff;
@@ -179,6 +180,9 @@ body.qq7-js-window-chrome #qq7-root .qq7-titlebar-jszone {
 #qq7-root .qq7-menu-item {
   height: 23px;
   display: inline-flex;
+  /* 窄窗口时允许收缩，文字用省略号，保证右侧「+」按钮不会被挤出可视区 */
+  min-width: 0;
+  flex: 0 1 auto;
   -webkit-app-region: no-drag;
   align-items: center;
   gap: 4px;
@@ -189,6 +193,12 @@ body.qq7-js-window-chrome #qq7-root .qq7-titlebar-jszone {
   color: var(--qq7-c-17436B, #17436b);
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+}
+
+#qq7-root .qq7-menu-item > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #qq7-root .qq7-menu-item:hover {
@@ -1439,19 +1449,22 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
    --qq7-c-XXXXXX 令牌由 qq2007-chrome.js 在运行时按色相旋转改写；
    每个 var() 都带原始色值回退，脚本未运行 / 关闭皮肤时界面与改动前完全一致。 */
 
+/* 颜色编辑按钮：紧贴菜单栏「原版」右侧，与菜单项同一行。
+   不用 margin-left: auto —— 那会把按钮推到整行最右端，与「原版」隔开大片空白。
+   菜单栏空白处是可拖拽区，按钮必须自己声明 no-drag，否则点不动。 */
 #qq7-root .qq7-colorbtn {
   -webkit-app-region: no-drag;
-  /* 标题栏里还有一个绝对定位的 .qq7-titlebar-jszone 会盖住下沿，
-     给按钮自己的层叠上下文，保证点得到、且不被拖拽热区吃掉 */
   position: relative;
   z-index: 2;
-  margin-left: auto;
-  width: 20px; height: 20px;
+  margin-left: 2px;
+  width: 22px; height: 22px;
   display: grid; place-items: center;
   border: 1px solid transparent;
   border-radius: 2px;
   cursor: pointer;
-  flex: 0 0 20px;
+  flex: 0 0 22px;
+  flex-shrink: 0;
+  /* 极窄窗口下菜单项会挤占空间：按钮 sticky 定位到菜单栏右缘，保证始终可见可点 */
 }
 
 #qq7-root .qq7-colorbtn:hover {
@@ -1481,10 +1494,12 @@ body.qq7-shell .cb-agent-card [class*="_title"] {
 #qq7-root .qq7-colorbtn i::after  { left: 0; top: 4px; width: 11px; height: 3px; }
 
 /* 色板菜单（QQ2007 菜单配色：底色 #FAFAFA、悬停 #CFE7FF、文字 #071E81） */
+/* 菜单栏下沿 = 标题栏 65px + 菜单栏 29px = 94px。
+   菜单跟随按钮位置弹出：用 JS 在 openColorMenu 里设置 --qq7-colormenu-x。 */
 #qq7-root .qq7-colormenu {
   position: absolute;
   top: 94px;
-  right: 6px;
+  left: var(--qq7-colormenu-x, 8px);
   z-index: 5;
   min-width: 132px;
   padding: 3px;

@@ -332,7 +332,9 @@ class ThemeStaticTests(unittest.TestCase):
         self.assertIn('role="menuitem" tabindex="-1"', self.js)
         # 打开时再置 0
         start = self.js.index("function openColorMenu")
-        body = self.js[start : start + 900]
+        # 窗口要覆盖到函数末尾（里面还有菜单定位逻辑）
+        end = self.js.index("function syncColorMenuState", start)
+        body = self.js[start:end]
         self.assertIn("tabIndex = item === active ? 0 : -1", body)
 
     def test_color_menu_arrow_navigation(self) -> None:
@@ -355,6 +357,29 @@ class ThemeStaticTests(unittest.TestCase):
         block = self.css[start : start + 300]
         self.assertNotIn("outline: none", block)
 
+
+
+    def test_color_button_sits_in_menubar_after_toggle(self) -> None:
+        """换肤按钮位于菜单栏「原版」之后，不再出现在标题栏里。
+
+        位置由 CSS 的 margin-left: auto 推到行尾，所以必须同时校验：
+        它在 .qq7-menubar 内部，且标题栏里已经没有它。
+        """
+        bar_start = self.js.index('<div class="qq7-menubar">')
+        bar_end = self.js.index("</div>", self.js.index("MENU.map", bar_start)) + 400
+        menubar = self.js[bar_start:bar_end]
+        self.assertIn('class="qq7-colorbtn"', menubar, msg="换肤按钮必须在菜单栏内")
+
+        title_start = self.js.index('<div class="qq7-titlebar">')
+        title_end = self.js.index('<div class="qq7-menubar">', title_start)
+        titlebar = self.js[title_start:title_end]
+        self.assertNotIn('class="qq7-colorbtn"', titlebar, msg="标题栏不应再出现换肤按钮")
+
+    def test_color_menu_anchors_below_menubar(self) -> None:
+        """弹出菜单贴菜单栏下沿（94px = 65 标题栏 + 29 菜单栏），不是标题栏下沿。"""
+        start = self.css.index("#qq7-root .qq7-colormenu {")
+        block = self.css[start : start + 300]
+        self.assertIn("top: 94px", block)
 
 if __name__ == "__main__":
     unittest.main()

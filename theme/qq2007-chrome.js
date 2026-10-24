@@ -764,11 +764,11 @@
       <div class="qq7-titlebar">
         <span class="qq7-title-ico"></span>
         <span class="qq7-title-text">WorkBuddy 2007</span>
-        <span class="qq7-colorbtn" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" title="颜色编辑" aria-label="颜色编辑"><i></i></span>
         <div class="qq7-titlebar-jszone"></div>
       </div>
       <div class="qq7-menubar">
         ${MENU.map((m) => `<span class="qq7-menu-item" data-action="${m.action}">${icon(m.icon)}<span>${m.label}</span></span>`).join("")}
+        <span class="qq7-colorbtn" role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" title="颜色编辑" aria-label="颜色编辑"><i></i></span>
       </div>
       <div class="qq7-friend" id="qq7-friend-panel">${friendPanelHtml()}</div>
       <div class="qq7-statusbar">
@@ -2471,6 +2471,16 @@
     syncColorMenuState();
     colorMenuEl.hidden = false;
     if (colorBtnEl) colorBtnEl.setAttribute("aria-expanded", "true");
+    // 菜单跟随按钮位置弹出（按钮在菜单栏中段，不能写死在右侧）
+    if (colorBtnEl && colorMenuEl) {
+      const btn = colorBtnEl.getBoundingClientRect();
+      const host = root.getBoundingClientRect();
+      const menuWidth = colorMenuEl.offsetWidth || 140;
+      let left = btn.left - host.left;
+      // 防止菜单超出窗口右边缘
+      if (left + menuWidth > host.width - 6) left = Math.max(6, host.width - menuWidth - 6);
+      colorMenuEl.style.setProperty("--qq7-colormenu-x", Math.round(left) + "px");
+    }
     // 打开后把焦点交给当前配色项，键盘用户可直接用方向键选择
     const items = [...colorMenuEl.querySelectorAll(".qq7-colormenu-item")];
     const active = items.find((item) => item.classList.contains("is-current")) || items[0];
